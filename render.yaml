@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mizan-api
+    runtime: python
+    plan: free
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false          # paste the Gemini key in the Render dashboard
+      - key: PYTHON_VERSION
+        value: "3.12.6"
