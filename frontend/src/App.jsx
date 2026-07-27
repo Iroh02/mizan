@@ -2,6 +2,16 @@ import { useRef, useState } from 'react'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
+function mdToHtml(s) {
+  // minimal, safe rendering of the model's markdown: escape HTML first, then format
+  const esc = s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return esc
+    .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
+    .replace(/^#{1,4}\s*(.*)$/gm, '<b>$1</b>')
+    .replace(/^\s*[-*•]\s+(.*)$/gm, '&nbsp;&nbsp;• $1')
+    .replace(/\n/g, '<br/>')
+}
+
 const SUGGESTIONS = [
   'What is the corporate tax rate for income above AED 375,000?',
   'My revenue is AED 300,000 — do I need to register for corporate tax?',
@@ -106,7 +116,12 @@ export default function App() {
           ) : (
             <div key={i} className={`msg bot ${m.error ? 'error' : ''} ${m.abstained ? 'abstained' : ''}`}>
               {m.abstained && <div className="badge">Declined to guess</div>}
-              <div className="answer">{m.answer}</div>
+              <div className="answer" dangerouslySetInnerHTML={{ __html: mdToHtml(m.answer) }} />
+              {!m.error && m.tool_trace?.some((t) => t.tool === 'search_regulations') && (
+                <div className="grounding">
+                  ⚖ Searched the law {m.tool_trace.filter((t) => t.tool === 'search_regulations').length}× before answering
+                </div>
+              )}
               {!m.error && <Citations text={m.answer} />}
               {!m.error && <Trace trace={m.tool_trace} />}
             </div>

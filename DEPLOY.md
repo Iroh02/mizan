@@ -1,9 +1,18 @@
 # Deploy runbook
 
+> **PROVIDER UPDATE (Jul 27):** we use **Groq** (free, console.groq.com), NOT Gemini — Google's new "AQ."-prefix keys are currently broken on their OpenAI-compatible endpoint. Wherever this doc says OPENAI_API_KEY, set ALL FOUR variables:
+>
+> ```
+> OPENAI_API_KEY   = gsk_...   (Groq key — get from Nandita privately)
+> OPENAI_BASE_URL  = https://api.groq.com/openai/v1
+> MIZAN_CHAT_MODEL = openai/gpt-oss-120b
+> MIZAN_VISION_MODEL = meta-llama/llama-4-scout-17b-16e-instruct
+> ```
+
 ## 0. Prereqs (10 min)
 - GitHub repo pushed (see README §Push).
-- Free Gemini API key: https://aistudio.google.com/apikey → "Create API key". No card needed.
-- `backend/data/chunks.json` committed (run `python ingest.py` after downloading the PDFs).
+- Groq API key (see box above).
+- `backend/data/chunks.json` committed (done — 678 chunks, 6 FTA documents).
 
 ## Local run (do this before any deploy)
 ```bash
