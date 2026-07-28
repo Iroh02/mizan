@@ -21,11 +21,12 @@ const SUGGESTIONS = [
 
 function Citations({ text }) {
   // renders [doc | Article N] citation tags found in the answer as chips
-  const cites = [...new Set(text.match(/\[[^\]]+\|[^\]]+\]/g) || [])]
+  // the model occasionally emits full-width brackets (【...】) instead of ASCII ones
+  const cites = [...new Set(text.match(/[[【][^\]】]+\|[^\]】]+[\]】]/g) || [])]
   if (!cites.length) return null
   return (
     <div className="cites">
-      {cites.map((c) => <span key={c} className="cite">{c.replace(/[[\]]/g, '')}</span>)}
+      {cites.map((c) => <span key={c} className="cite">{c.replace(/[[\]【】]/g, '')}</span>)}
     </div>
   )
 }
