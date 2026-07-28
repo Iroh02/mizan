@@ -143,7 +143,12 @@ function Trace({ trace }) {
       </button>
       {open && trace.map((t, i) => (
         <div key={i} className="trace-row">
-          <code>{t.tool}</code> ← {JSON.stringify(t.args)}
+          <code>{t.tool}</code>
+          {t.args && Object.keys(t.args).length > 0 && <> ← {JSON.stringify(t.args)}</>}
+          {t.result_preview && (
+            <span className="trace-result"> → {t.result_preview.length > 80
+              ? t.result_preview.slice(0, 80) + '…' : t.result_preview}</span>
+          )}
         </div>
       ))}
     </div>
