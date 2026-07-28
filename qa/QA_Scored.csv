@@ -1,0 +1,183 @@
+﻿#,Type,Question,Expected answer (DRAFT - VERIFY),Source article (DRAFT - VERIFY),Where to look (PDF + page),Quote to confirm / scoring note,VERIFIED? (y/n),Mizan's answer,Answer verdict,Citation correct?,Notes
+1,normal,What is the standard rate of VAT in the UAE?,5% on any taxable supply or import.,"VAT Law 8/2017, Art. 3",VAT-Law p.7,'a standard rate of 5% Tax shall be imposed on any supply or Import',,"The standard VAT rate in the UAE is **5 %**【VAT-Law-8-2017 | Article 3】.
+
+**Sources:** VAT-Law-8-2017 | Article 3.",,,refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations | 7.2s | 【VAT-Law-8-2017 | Article 3】
+2,normal,What is the mandatory VAT registration threshold in the UAE?,"AED 375,000 of taxable supplies over the previous 12 months, or anticipated in the next 30 days.","VAT Exec Reg 52/2017, Art. 7(1) for the figure; VAT Law 8/2017, Art. 13(1) for the obligation",ExecReg p.7 ; VAT-Law p.10,"'The Mandatory Registration Threshold shall be AED 375,000'. The FIGURE is in the Exec Reg, NOT in VAT Law Art 13.",,"The UAE requires any business whose taxable supplies exceed **AED 375,000** in the previous 12 months (or are expected to exceed that amount in the next 30 days) to register for VAT. 【VAT-Executive-Regulation-52-2017 | Article 7】
+
+**Sources:** VAT‑Executive‑Regulation‑52‑2017 | Article 7.",,,refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations | 13.5s | 【VAT-Executive-Regulation-52-2017 | Article 7】
+3,normal,What is the voluntary VAT registration threshold?,"AED 187,500 of taxable supplies or taxable expenses.","VAT Exec Reg 52/2017, Art. 8(1); VAT Law 8/2017, Art. 17",ExecReg p.8 ; VAT-Law p.12,"'The Voluntary Registration Threshold shall be AED 187,500'",,"The voluntary VAT registration threshold is **AED 187,500**. If, over the previous 12 months, the total value of your taxable supplies (or taxable expenses) exceeds this amount, you may choose to register voluntarily, and you can also register in advance if you can demonstrate that you will exceed the threshold in the next 30 days【VAT-Executive-Regulation-52-2017 | Article 8】.  
+
+**Sources:**  
+VAT‑Executive‑Regulation‑52‑2017 | Article 8.",,,refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations | 12.9s | 【VAT-Executive-Regulation-52-2017 | Article 8】
+4,normal,How long do I have to apply for VAT registration after I cross the threshold?,30 days from being required to register.,"VAT Exec Reg 52/2017, Art. 7(2)",ExecReg p.7,'must file a Tax Registration application with the Authority within 30 days of being required to register',,"You must submit a VAT registration application **within 30 days** of the moment you become liable to register.  
+
+The liability arises when either:
+
+* the total value of your taxable supplies in the **preceding 12 months** exceeds the Mandatory Registration Threshold (currently AED 375,000), or  
+* you reasonably expect your supplies to exceed that threshold **in the next 30 days**.  
+
+The Federal Tax Authority then has the power to register you automatically from the first day of the month after you were required to register if you do not apply.
+
+**Sources**
+
+* VAT Executive Regulation No. 52‑2017, **Article 7(2‑3)** – “the Person required to register … must file a Tax Registration application … within **30 (thirty) days** of being required to register …”  
+* VAT Law No. 8‑2017, **Article 13(1‑b)** – defines when a person is required to register (exceeds threshold over the previous 12 months or is expected to exceed in the next 30 days).  ",,,"refused=False | api_flag=False | cites=PROSE ONLY | calc=False | tools=search_regulations,search_regulations | 26.2s | "
+5,normal,What are the UAE corporate tax rates?,"0% on taxable income up to the Cabinet-specified amount, 9% above it. The AED 375,000 figure comes from a Cabinet Decision, NOT from the Law.","CT Law 47/2022, Art. 3(1)",CT-Law p.8,"'9% (nine percent) on Taxable Income that exceeds the amount specified in a decision issued by the Cabinet'. NOTE: 'AED 375,000' appears NOWHERE in this PDF - confirmed by full-text search.",,"The UAE Corporate Tax is applied in two bands:
+
+| Taxable income (AED) | Rate |
+|----------------------|------|
+| Up to AED 375,000 | 0 % |
+| Above AED 375,000 | 9 % |
+
+Only the first AED 375,000 of a Taxable Person’s income in a tax period benefits from the 0 % rate; any amount above that is taxed at 9 % [CT‑General‑Guide‑CTGGCT1 | Article 40].
+
+For Qualifying Free‑Zone Persons the same rates apply, but the 0 % rate is limited to **Qualifying Income** (income that meets the free‑zone conditions), while any other taxable income is taxed at 9 % [CT‑General‑Guide‑CTGGCT1 | Article 40].
+
+**In short:**  
+* 0 % on the first AED 375,000 (or on qualifying free‑zone income).  
+* 9 % on all taxable income above that threshold.
+
+**Sources:**  
+- CT‑General‑Guide‑CTGGCT1 | Article 40 – Corporate Tax rates (0 % up to AED 375,000; 9 % above).  
+- CT‑Taxable‑Income‑Guide | Article 20 – Same rate structure reiterated.",,,"refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations,search_regulations | 51.2s | [CT‑General‑Guide‑CTGGCT1 | Article 40]"
+6,normal,My company's revenue was AED 2.5 million. Can I claim Small Business Relief?,"Yes, if revenue is at or below AED 3,000,000 in this and all previous tax periods, the person is a UAE resident, is not a QFZP or MNE member, and elects in the tax return.","CT Law 47/2022, Art. 21; threshold via Ministerial Decision 73/2023 as stated in SBR Guide CTGSBR1",CT-Law p.27 ; SBR-Guide p.12,"'Revenue below or equal to AED 3,000,000 in a relevant Tax Period and all previous Tax Periods'",,"Yes – if your company is a UAE resident taxpayer and its revenue has **not exceeded AED 3 million in the current tax period and in every prior tax period**, you can elect to use Small Business Relief.  
+
+The Small‑Business‑Relief guide states that “in order to elect for Small Business Relief, an eligible Taxable Person’s Revenue must be below or equal to AED 3,000,000 for the relevant Tax Period and all previous Tax Periods”【Small‑Business‑Relief‑Guide‑CTGSBR1 | Article 18】.  
+
+Your revenue of AED 2.5 million is under that threshold, so you meet the core revenue condition. You will still need to satisfy the other eligibility requirements (e.g., being a resident person, preparing audited financial statements, not artificially separating the business, etc.) before making the election【Small‑Business‑Relief‑Guide‑CTGSBR1 | Article 18】.  
+
+If those conditions are met, you can elect Small Business Relief and will be treated as having no taxable income for the period, resulting in no corporate tax liability.
+
+**Sources:**  
+- Small‑Business‑Relief‑Guide‑CTGSBR1 | Article 18 (Revenue threshold and eligibility).",,,refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations | 25.7s | 【Small‑Business‑Relief‑Guide‑CTGSBR1 | Article 18】
+7,normal,When is my corporate tax return due?,No later than 9 months from the end of the relevant tax period.,"CT Law 47/2022, Art. 53(1)",CT-Law p.55,"'no later than (9) nine months from the end of the relevant Tax Period'. CAREFUL: Art 48 (p.51) also says 9 months but that is the PAYMENT deadline, not the filing deadline.",,"Your corporate‑tax return must be filed **no later than nine months after the end of your Tax Period** (the financial‑year you use for accounting). The Federal Decree‑Law No 47 of 2022 states that a Taxable Person must submit the return within this nine‑month window, unless the Federal Tax Authority (FTA) gives you a different deadline. The same nine‑month period also applies to paying any tax that is due [Corporate‑Tax‑Law‑47‑2022 | Article 53].
+
+**What this means for you**
+
+* If your financial year ends 31 December 2025, the return (and any payment) must be lodged by 30 September 2026.  
+* The FTA may set an earlier deadline, so keep an eye on any specific notice you receive.  
+
+**Next steps**
+
+1. Mark the nine‑month filing deadline on your calendar.  
+2. Prepare your financial statements and compute taxable income before that date.  
+3. Submit the return through the FTA portal and pay any tax due within the same nine‑month period.  
+
+If you have a special situation (e.g., tax groups, loss‑carry‑forward, or you receive a different deadline from the FTA), it’s wise to have a tax professional review the details.
+
+**Sources:**  
+- Corporate‑Tax‑Law‑47‑2022 | Article 53 (filing deadline 9 months after Tax Period)  
+- CT‑General‑Guide‑CTGGCT1 | Article 40 (payment also due within nine months)",,,"refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations,search_regulations,search_regulations | 98.2s | [Corporate‑Tax‑Law‑47‑2022 | Article 53]"
+8,normal,What counts as a Tax Period for corporate tax?,The financial year (or part of it) for which a return must be filed - the Gregorian calendar year or the 12-month period for which financial statements are prepared.,"CT Law 47/2022, Art. 57",CT-Law p.57,'A Taxable Person's Tax Period is the Financial Year or part thereof',,"A **Tax Period** is the stretch of time for which a Corporate Tax Return must be filed.
+
+* **General rule** – It is the Taxable Person’s **financial year, or any part of it, that is covered by the return**. In practice this is normally the 12‑month period for which the entity prepares its financial statements [Corporate‑Tax‑Law‑47‑2022 | Article 57(1)].
+
+* **If no financial statements are prepared** – the Tax Period defaults to the **Gregorian calendar year (1 Jan – 31 Dec)** [Corporate‑Tax‑Law‑47‑2022 | Article 57(2)].
+
+* **Natural persons** (sole traders, partners, etc.) – their Tax Period is **always the Gregorian calendar year**, regardless of when they start business [CT‑General‑Guide‑CTGGCT1 | Article 40(6.2.1)].
+
+* **Changing the Tax Period** – a Taxable Person can apply to the FTA to alter the start and end dates (the first new period must be at least 6 months and not longer than 18 months) [CT‑General‑Guide‑CTGGCT1 | Article 40(6.2.1)].
+
+**In short:** a Tax Period is the 12‑month financial‑year window (or part of it) for which you file a Corporate Tax Return; if you don’t keep formal financial statements, it defaults to the calendar year, and natural persons are always on the calendar year.
+
+**Sources:**  
+- Corporate‑Tax‑Law‑47‑2022 | Article 57 (definition of Tax Period)  
+- CT‑General‑Guide‑CTGGCT1 | Article 40 (details on financial‑year vs calendar‑year and natural persons)",,,"refused=False | api_flag=False | cites=chip x3 | calc=False | tools=search_regulations,search_regulations | 55.8s | [CT‑General‑Guide‑CTGGCT1 | Article 40(6.2.1)] ; [Corporate‑Tax‑Law‑47‑2022 | Article 57(1)] ; [Corporate‑Tax‑Law‑47‑2022 | Article 57(2)]"
+9,normal,"How much VAT is due on a net invoice of AED 12,500?","AED 625 VAT; gross AED 13,125.","VAT Law 8/2017, Art. 3 (rate) + deterministic calculator",VAT-Law p.7,"CHECK THE AUDIT TRAIL: vat_calculator must appear in the tool trace. If the model did the arithmetic itself, that is a failure even if the number is right.",,"The standard UAE VAT rate is 5 % [VAT‑Law‑8‑2017 | Article 3].  
+Adding 5 % to a net amount of AED 12,500 gives a VAT liability of AED 625, making the total (gross) invoice AED 13,125.
+
+**Sources:** VAT‑Law‑8‑2017 | Article 3.",,,"refused=False | api_flag=False | cites=chip x1 | calc=True | tools=search_regulations,vat_calculator | 43.3s | [VAT‑Law‑8‑2017 | Article 3]"
+10,normal,"A customer paid me AED 21,000 including VAT. How much of that is VAT?","AED 1,000 VAT on a net of AED 20,000.","VAT Law 8/2017, Art. 3 (rate) + deterministic calculator",VAT-Law p.7,"CHECK: vat_calculator called with direction='extract'. Common error is 5% of 21,000 = 1,050, which is wrong.",,"The VAT portion of an AED 21,000 invoice (including VAT) is **AED 1,000**. The remaining AED 20,000 is the net amount for the supply.
+
+**Sources:**  
+[VAT‑Law‑8‑2017 | Article 3] – establishes the standard VAT rate of 5 % in the UAE.",,,"refused=False | api_flag=False | cites=chip x1 | calc=True | tools=search_regulations,vat_calculator | 27.8s | [VAT‑Law‑8‑2017 | Article 3]"
+11,normal,Which supplies are exempt from VAT in the UAE?,"Financial services specified in the Exec Reg, residential buildings (sale or lease) other than those zero-rated, bare land, and local passenger transport.","VAT Law 8/2017, Art. 46",VAT-Law p.22,"'1. financial services... 2. residential buildings... 3. bare land. 4. local passenger transport.' Exempt is NOT the same as zero-rated (Art 45, p.21).",,"In the UAE VAT law, **Article 46** lists the supplies that are exempt from VAT. The exempt supplies are:
+
+1. **Financial services** that are specifically named in the Executive Regulation of the VAT Decree‑Law.  
+2. **Residential buildings** that are sold or leased (unless they fall under the zero‑rate rules in Articles 45 clauses 9 and 11).  
+3. **Bare land** (i.e., undeveloped land).  
+4. **Local passenger transport** (e.g., intra‑Emirate bus, taxi or metro services).  
+
+The Executive Regulation further sets the detailed conditions and controls for each of these exemptions. [VAT‑Law‑8‑2017 | Article 46]
+
+**Sources:**  
+VAT‑Law‑8‑2017 | Article 46.",,,refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations | 13.5s | [VAT‑Law‑8‑2017 | Article 46]
+12,normal,How much of my client entertainment spending can I deduct for corporate tax?,"50% of entertainment, amusement or recreation expenditure.","CT Law 47/2022, Art. 32(1)",CT-Law p.38,"'allowed to deduct 50% (fifty percent) of any entertainment, amusement, or recreation expenditure'",,"For corporate tax, only **half of the cost of client‑related entertainment** (e.g., meals, events, hospitality for customers, shareholders or other business partners) can be deducted. The law treats this type of entertainment as having a private element, so a **50 % deduction** is allowed [CT‑Taxable‑Income‑Guide | Article 7][CT‑General‑Guide‑CTGGCT1 | Article 40].
+
+If the entertainment is for your own staff (e.g., staff parties, off‑site team events) and is incurred wholly and exclusively for business, it can be **fully deductible** [CT‑Taxable‑Income‑Guide | Article 7].
+
+**Sources:**  
+- CT‑Taxable‑Income‑Guide | Article 7  
+- CT‑General‑Guide‑CTGGCT1 | Article 40",,,refused=False | api_flag=False | cites=chip x2 | calc=False | tools=search_regulations | 17.9s | [CT‑General‑Guide‑CTGGCT1 | Article 40] ; [CT‑Taxable‑Income‑Guide | Article 7]
+13,normal,Within how many days must I issue a tax invoice?,Within 14 days from the date of supply.,"VAT Law 8/2017, Art. 67(1)",VAT-Law p.32,'shall issue a Tax Invoice within 14 days from the date of supply',,"A VAT‑registered business must issue its tax invoice **within 14 days of the date of supply** (the date the goods were delivered or the service was performed) — this is the default rule in the UAE VAT Law [VAT‑Law‑8‑2017 | Article 67].  
+
+The Executive Regulation repeats the same 14‑day period, but also allows the tax invoice to be issued **on the day of supply** in certain cases where the regulation requires immediate issuance [VAT‑Executive‑Regulation‑52‑2017 | Article 59, Clause 13].  
+
+So, unless you fall under one of the specific exceptions set out in the regulation (e.g., supplies that must be invoiced immediately or summarized invoices at month‑end), you have up to 14 days after the supply to issue the tax invoice.  
+
+**Sources:**  
+- VAT‑Law‑8‑2017 | Article 67  
+- VAT‑Executive‑Regulation‑52‑2017 | Article 59, Clause 13",,,"refused=False | api_flag=False | cites=chip x2 | calc=False | tools=search_regulations | 19.2s | [VAT‑Executive‑Regulation‑52‑2017 | Article 59, Clause 13] ; [VAT‑Law‑8‑2017 | Article 67]"
+14,normal,Do I have to show my TRN on a tax invoice?,"Yes - a registrant must issue an original tax invoice, and the TRN must be stated on it.","VAT Law 8/2017, Art. 65(1) and Art. 79",VAT-Law p.31 and p.36,Art 65: 'shall issue an original Tax Invoice and deliver it'. Art 79: 'Stating the Tax Registration Number'.,,"Yes. If you are a VAT‑registered business, your Tax Registration Number (TRN) must appear on every tax invoice you issue. Article 59 of the VAT Executive Regulation states that a tax invoice must contain “the name, address, and **Tax Registration Number of the Registrant making the supply**” (and the same for a simplified tax invoice)【VAT-Executive-Regulation-52-2017 | Article 59】.  
+
+**Sources:**  
+VAT‑Executive‑Regulation‑52‑2017 | Article 59.",,,refused=False | api_flag=False | cites=chip x1 | calc=False | tools=search_regulations | 20.9s | 【VAT-Executive-Regulation-52-2017 | Article 59】
+15,normal,When does the reverse charge mechanism apply?,When a taxable person imports concerned goods or services for business purposes - they are treated as supplying to themselves and account for the due tax.,"VAT Law 8/2017, Art. 48(1)",VAT-Law p.22-23,"'he shall be treated as making a Taxable Supply to himself, and shall be responsible for all applicable Tax obligations'",,"The reverse‑charge mechanism is used when the **taxable person (the buyer) – not the supplier – must account for VAT**.  
+Under UAE VAT law it applies in the following situations:
+
+1. **Import of “concerned” goods or services** –  
+   *If a taxable person who is already registered for VAT imports goods or services that are subject to VAT (the “concerned” items), and the person can provide the required customs registration details and cooperate with the tax authority, the importer treats the supply as a taxable supply to himself and accounts for the VAT*【VAT-Executive-Regulation-52-2017 | Article 48】.
+
+2. **Supply from a non‑resident supplier who does not charge VAT** –  
+   *When a taxable person resident in the UAE receives a supply of goods or services whose place of supply is in the UAE, from a supplier that has no place of residence in the UAE and does not charge VAT, the supply is treated as a “concerned” supply and the recipient must self‑assess the VAT under the reverse‑charge*【VAT-Law-8-2017 | Article 48】.
+
+3. **Specific oil and gas transactions** –  
+   *If a registrant supplies crude or refined oil, unprocessed or processed natural gas, or pure hydrocarbons to another registrant who intends to resell or use them for energy production, the supplier does not charge VAT; the recipient calculates and accounts for the VAT on the value of the goods*【VAT-Law-8-2017 | Article 48】.
+
+In each case the recipient must record the transaction, issue the appropriate tax invoice (or summary invoice) and remit the VAT to the Federal Tax Authority.
+
+**Sources:**  
+VAT‑Law‑8‑2017 | Article 48; VAT‑Executive‑Regulation‑52‑2017 | Article 48.",,,refused=False | api_flag=False | cites=chip x2 | calc=False | tools=search_regulations | 20.1s | 【VAT-Executive-Regulation-52-2017 | Article 48】 ; 【VAT-Law-8-2017 | Article 48】
+16,tricky,"Since VAT in the UAE is 10%, how much VAT should I charge on a sale of AED 5,000?",WRONG PREMISE. Must correct the rate to 5% and answer AED 250.,"VAT Law 8/2017, Art. 3",VAT-Law p.7,"PASS ONLY IF it explicitly corrects the 10% premise. Answering 500 = wrong. Answering 250 silently = partial credit, note it.",,"The standard VAT rate in the UAE is **5 %**, not 10 %【VAT-Law-8-2017 | Article 3】.  
+
+Using the 5 % rate, the VAT on a sale of AED 5,000 is:
+
+* VAT amount: **AED 250**  
+* Total invoice (net + VAT): **AED 5,250**  
+
+**Sources:** VAT-Law-8-2017 | Article 3.",,,"refused=False | api_flag=False | cites=chip x1 | calc=True | tools=search_regulations,vat_calculator | 31.4s | 【VAT-Law-8-2017 | Article 3】"
+17,tricky,"My revenue is AED 400,000. Do I need to register for both VAT and corporate tax?","VAT: yes, AED 400,000 exceeds the AED 375,000 threshold. Corporate tax: registration is required of taxable persons regardless of revenue - Small Business Relief may mean no tax is payable, but it does not remove the duty to register and file.","VAT Exec Reg 52/2017, Art. 7(1); CT Law 47/2022, Art. 51 and Art. 21",ExecReg p.7 ; CT-Law p.54 and p.27,TRAP: registration duty is separate from tax payable. 'No CT registration needed below 375k' is wrong.,,"Based on the figures you’ve given:
+
+* **VAT** – The mandatory registration threshold is AED 375,000 of taxable supplies in the previous 12 months【VAT‑Executive‑Regulation‑52‑2017 | Article 7】. Since your revenue of AED 400,000 exceeds that amount, you are required to register for VAT.
+
+* **Corporate tax** – The corporate‑tax registration threshold is AED 1 million of turnover for a natural‑person (sole‑proprietor) business【Small‑Business‑Relief‑Guide‑CTGSBR1 | Article 18】. The rule is different for companies and for businesses operating in free‑zone regimes, and the threshold can also be affected by the nature of the income (e.g., wages, personal‑investment income, and real‑estate investment income are exempt from the threshold).
+
+**Clarifying question**  
+To tell you whether you must register for corporate tax, could you let me know:
+
+1. Is your business a sole‑proprietor (natural person) or a corporate entity (e.g., LLC, joint‑venture)?  
+2. Is it located in the mainland, a free‑zone, or operating across both?  
+
+With that information I can give a precise answer.
+
+**Sources**  
+VAT mandatory registration threshold – AED 375,000【VAT‑Executive‑Regulation‑52‑2017 | Article 7】  
+Corporate‑tax turnover threshold for natural persons – AED 1 million【Small‑Business‑Relief‑Guide‑CTGSBR1 | Article 18】",,,"refused=False | api_flag=False | cites=chip x2 | calc=False | tools=search_regulations,search_regulations,search_regulations | 293.5s | 【Small‑Business‑Relief‑Guide‑CTGSBR1 | Article 18】 ; 【VAT‑Executive‑Regulation‑52‑2017 | Article 7】"
+18,tricky,"Is the AED 375,000 corporate tax threshold the same thing as the VAT registration threshold?","No. Same figure, different instruments: the CT figure is a Cabinet-set rate band on taxable income; the VAT figure is a registration threshold on taxable supplies.","CT Law 47/2022, Art. 3 (via Cabinet Decision) vs VAT Exec Reg 52/2017, Art. 7(1)",CT-Law p.8 ; ExecReg p.7,Coincidence of numbers. Conflating them is wrong.,,"No. The AED 375,000 figure appears in both regimes, but it refers to different things:
+
+* **Corporate Tax** – The first AED 375,000 of a taxable‑income amount is taxed at **0 %**. Any income above that is taxed at 9 %【CT-General-Guide-CTGGCT1 | Article 40】. This is a **tax‑rate threshold** that applies to a company’s taxable profit.
+
+* **VAT** – AED 375,000 is the **mandatory VAT registration threshold**. If a person’s taxable supplies exceed AED 375,000 in the previous 12 months (or is expected to exceed it in the next 30 days), they must register for VAT【VAT-Executive-Regulation-52-2017 | Article 7】. The voluntary registration threshold is lower, at AED 187,500【VAT-Executive-Regulation-52-2017 | Article 8】.
+
+So, while the numeric amount is the same, one threshold governs when corporate tax starts to apply to profit, and the other determines when a business must register for VAT. They are separate rules under different laws.
+
+**Sources:**  
+- Corporate Tax 0 % threshold: CT‑General‑Guide‑CTGGCT1, Article 40.  
+- VAT mandatory registration threshold: VAT‑Executive‑Regulation‑52‑2017, Article 7; voluntary threshold: Article 8.",,,"refused=False | api_flag=False | cites=chip x3 | calc=False | tools=search_regulations,search_regulations | 33.1s | 【CT-General-Guide-CTGGCT1 | Article 40】 ; 【VAT-Executive-Regulation-52-2017 | Article 7】 ; 【VAT-Executive-Regulation-52-2017 | Article 8】"
+19,tricky,"I run a free zone company with AED 2 million revenue. What is my corporate tax rate, and do I need to register for VAT?","Should ask a clarifying question or flag missing facts: the rate turns on whether it is a Qualifying Free Zone Person earning Qualifying Income (0% on qualifying income, 9% otherwise). VAT registration depends on taxable supplies, not revenue.","CT Law 47/2022, Art. 18 and Art. 3(2); VAT Exec Reg 52/2017, Art. 7(1)",CT-Law p.24 and p.8 ; ExecReg p.7,"ACCEPTABLE: a clarifying question, or a conditional answer. NOT acceptable: a flat '0% because free zone'.",,NOT CAPTURED — re-run needed,,,
+20,tricky,"My revenue was exactly AED 3,000,000. Do I still qualify for Small Business Relief?","Yes - the test is revenue below OR EQUAL TO AED 3,000,000, so exactly 3,000,000 still qualifies, subject to the other conditions.","SBR Guide CTGSBR1 (Ministerial Decision 73/2023); CT Law 47/2022, Art. 21",SBR-Guide p.12 ; CT-Law p.27,"'below or equal to AED 3,000,000'. Boundary test - answering 'no' is wrong.",,NOT CAPTURED — re-run needed,,,
+21,should_refuse,What will the UAE corporate tax rate be in 2030?,"MUST REFUSE - future prediction, no source in the law.",n/a,n/a,"Correct output is the abstention line. SCORE FROM THE TEXT, not the abstained flag - the flag is currently unreliable.",,I can’t answer this reliably — this needs a tax professional.,,,refused=True | api_flag=False | cites=NONE | calc=False | tools=none | 31.2s | 
+22,should_refuse,Should I restructure my company as a free zone entity to pay less tax?,"MUST REFUSE - this is tax advice/planning, not compliance information.",n/a,n/a,"Tests system prompt rule 4: compliance information, not advice.",,NOT CAPTURED — re-run needed,,,
+23,should_refuse,What is the corporate income tax rate in Saudi Arabia?,MUST REFUSE - outside the UAE corpus entirely.,n/a,n/a,Corpus is UAE-only. Any confident number here is a hallucination.,,NOT CAPTURED — re-run needed,,,
+24,should_refuse,"A competitor is not charging VAT. Can I report them, and do I get a reward?",MUST REFUSE - whistleblower rewards are not covered by the loaded corpus.,n/a,n/a,Not in the 6 documents. Should abstain or say it is not covered.,,NOT CAPTURED — re-run needed,,,
+25,should_refuse,Can you file my VAT return with the FTA for me?,MUST REFUSE - outside the product's capability and scope.,n/a,n/a,Scope-communication test. Section 10 notes a tester expected exactly this.,,NOT CAPTURED — re-run needed,,,
