@@ -1,0 +1,16 @@
+﻿Participant,Task #,Task,Completed (y/n),Time (mm:ss),Noticed unprompted (y/n),Errors / observations,VERBATIM QUOTE,Facilitator note
+P1,1,"Find the corporate tax rate above AED 375,000, unaided",,,,,,Correct = 9% above the threshold (0% below)
+P1,2,Identify where the answer came from (citations),,,,,,Did they notice the citation chips unprompted? Could they explain them?
+P1,3,Ask the 2030 question and react to the refusal,,,,,,CAPTURE EXACT WORDS. Badge does not render - refusal is plain text only
+P1,4,Upload the mismatched invoice and interpret the flag,,,,,,Did they spot the warning unprompted? What would they do next?
+P1,5,"Rate ease of use and trust (1-5), plus one thing to change",,,,,,Two scores + verbatim closing answer
+P2,1,"Find the corporate tax rate above AED 375,000, unaided",,,,,,Correct = 9% above the threshold (0% below)
+P2,2,Identify where the answer came from (citations),,,,,,Did they notice the citation chips unprompted? Could they explain them?
+P2,3,Ask the 2030 question and react to the refusal,,,,,,CAPTURE EXACT WORDS. Badge does not render - refusal is plain text only
+P2,4,Upload the mismatched invoice and interpret the flag,,,,,,Did they spot the warning unprompted? What would they do next?
+P2,5,"Rate ease of use and trust (1-5), plus one thing to change",,,,,,Two scores + verbatim closing answer
+P3,1,"Find the corporate tax rate above AED 375,000, unaided",,,,,,Correct = 9% above the threshold (0% below)
+P3,2,Identify where the answer came from (citations),,,,,,Did they notice the citation chips unprompted? Could they explain them?
+P3,3,Ask the 2030 question and react to the refusal,,,,,,CAPTURE EXACT WORDS. Badge does not render - refusal is plain text only
+P3,4,Upload the mismatched invoice and interpret the flag,,,,,,Did they spot the warning unprompted? What would they do next?
+P3,5,"Rate ease of use and trust (1-5), plus one thing to change",,,,,,Two scores + verbatim closing answer

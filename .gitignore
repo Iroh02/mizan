@@ -7,3 +7,6 @@ node_modules/
 dist/
 backend/data/regulations/*.pdf
 .DS_Store
+
+# local working backups of the business plan
+*.backup-*.docx

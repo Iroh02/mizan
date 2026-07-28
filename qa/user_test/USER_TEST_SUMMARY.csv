@@ -1,0 +1,17 @@
+﻿Field,P1,P2,P3,Result for Section 10
+Consent given (y/n),,,,
+Role / background,,,,tabulate in Section 10
+Task 1 completed,,,,= completion rate
+Task 1 time,,,,= mean time to first answer
+Task 2 - noticed citations unprompted,,,,= trust-signal finding
+Task 3 - understood the refusal,,,,= abstention comprehension
+Task 4 - spotted invoice mismatch,,,,= flag comprehension
+Task 4 time to extraction,,,,
+Ease of use (1-5),,,,= mean ease score
+Trust in answers (1-5),,,,= mean trust score
+,,,,
+LIKED (one line each),,,,-> Section 10 'What users liked'
+CONFUSING (one line each),,,,-> Section 10 'What users found confusing'
+WOULD CHANGE (one line each),,,,-> Section 10 'Changes made after feedback'
+,,,,
+Change IMPLEMENTED before deadline?,,,,state honestly - report says so where a change was discussed but not made
