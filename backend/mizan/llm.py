@@ -2,7 +2,19 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, field
+
+
+def clean_content(text: str | None) -> str | None:
+    """Strip reasoning-model think-tags (qwen et al. inline their chain of thought
+    as <think>...</think>). Keeps only the final user-facing answer."""
+    if not text:
+        return text
+    if "</think>" in text:
+        text = text.rsplit("</think>", 1)[-1]
+    text = re.sub(r"<think>.*", "", text, flags=re.S)  # unclosed tag: drop the rest
+    return text.strip() or None
 
 from openai import OpenAI
 
@@ -43,7 +55,7 @@ class LLM:
             except json.JSONDecodeError:
                 args = {}
             calls.append(ToolCall(id=tc.id, name=tc.function.name, arguments=args))
-        return LLMResponse(content=msg.content, tool_calls=calls)
+        return LLMResponse(content=clean_content(msg.content), tool_calls=calls)
 
     def vision_json(self, prompt: str, image_b64: str, mime: str) -> str:
         """Send an image + prompt, return the raw text reply (expected JSON)."""

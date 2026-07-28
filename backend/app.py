@@ -30,6 +30,16 @@ app.add_middleware(
 class AskRequest(BaseModel):
     question: str
     history: list[dict] = []   # prior turns: [{"role": "user"|"assistant", "content": "..."}]
+    company: str | None = None  # optional company context (demo-company mode / future profiles)
+
+
+def _with_company(history: list[dict], company: str | None) -> list[dict]:
+    """Prepend company context as a conversation turn so answers become entity-aware."""
+    if not company or not company.strip():
+        return history
+    return [{"role": "user", "content": f"Context about my company (use this when answering): {company.strip()}"},
+            {"role": "assistant", "content": "Noted — I'll take your company context into account and still cite the law for every claim."},
+            *history]
 
 
 @lru_cache(maxsize=1)
@@ -43,9 +53,16 @@ def _runtime():
 
 
 @app.get("/health")
-def health():
+def health(deep: bool = False):
+    """Basic: client + corpus load. With ?deep=1: one real (tiny) model call —
+    catches quota/key failures that a shallow check cannot. Use deep before demos,
+    not in monitors (it costs tokens)."""
     try:
-        _, _ = _runtime()
+        llm, _ = _runtime()
+        if deep:
+            resp = llm.chat_with_tools(
+                [{"role": "user", "content": "Reply with exactly: OK"}], [])
+            return {"ok": True, "model_reachable": bool(resp.content)}
         return {"ok": True}
     except Exception as e:
         return {"ok": False, "detail": str(e)}
@@ -58,7 +75,8 @@ def ask(req: AskRequest):
     llm, tools = _runtime()
     try:
         result = run_agent(req.question.strip(), llm, tools,
-                           max_iters=MAX_AGENT_ITERS, history=req.history)
+                           max_iters=MAX_AGENT_ITERS,
+                           history=_with_company(req.history, req.company))
     except Exception as e:
         raise HTTPException(502, f"LLM call failed: {e}")
     return {"answer": result.answer, "abstained": result.abstained,
@@ -75,7 +93,8 @@ def ask_stream(req: AskRequest):
     def gen():
         try:
             for ev in run_agent_events(req.question.strip(), llm, tools,
-                                       max_iters=MAX_AGENT_ITERS, history=req.history):
+                                       max_iters=MAX_AGENT_ITERS,
+                                       history=_with_company(req.history, req.company)):
                 yield f"data: {json.dumps(ev)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'detail': f'LLM call failed: {e}'})}\n\n"

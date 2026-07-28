@@ -12,6 +12,10 @@ function mdToHtml(s) {
     .replace(/\n/g, '<br/>')
 }
 
+const DEMO_COMPANY =
+  'Al Noor Trading LLC — mainland Dubai trading company (electronics), ~AED 2.1M annual revenue, ' +
+  'VAT-registered since 2019, Corporate Tax registered 2024, 8 employees, imports from China, exports to Saudi Arabia.'
+
 const SUGGESTIONS = [
   'What is the corporate tax rate for income above AED 375,000?',
   'My revenue is AED 300,000 — do I need to register for corporate tax?',
@@ -53,11 +57,13 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [statuses, setStatuses] = useState([])
   const [invoice, setInvoice] = useState(null)
+  const [demoCompany, setDemoCompany] = useState(false)
   const fileRef = useRef()
 
   function statusLabel(ev) {
     if (ev.tool === 'search_regulations') return `⚖ Searching the law: “${ev.args?.query || ''}”`
     if (ev.tool === 'vat_calculator') return '🧮 Calculating VAT (deterministic)…'
+    if (ev.tool === 'verify_citations') return '✓ Verifying citations against the retrieved law…'
     return `→ ${ev.tool}…`
   }
 
@@ -83,7 +89,7 @@ export default function App() {
     const res = await fetch(`${API}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, history }),
+      body: JSON.stringify({ question, history, company: demoCompany ? DEMO_COMPANY : null }),
     })
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText)
     return res.json()
@@ -108,7 +114,7 @@ export default function App() {
         const res = await fetch(`${API}/ask/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, history }),
+          body: JSON.stringify({ question, history, company: demoCompany ? DEMO_COMPANY : null }),
         })
         if (!res.ok || !res.body) throw new Error('stream unavailable')
         const reader = res.body.getReader()
@@ -143,6 +149,60 @@ export default function App() {
     }
   }
 
+  function exportReport() {
+    const qa = []
+    for (let i = 0; i < messages.length; i++) {
+      if (messages[i].role === 'user' && messages[i + 1]?.role === 'bot') {
+        qa.push({ q: messages[i].text, a: messages[i + 1] })
+      }
+    }
+    if (!qa.length && !invoice?.invoice) return
+    const when = new Date().toLocaleString('en-AE', { dateStyle: 'long', timeStyle: 'short' })
+    const cites = (t) => [...new Set((t || '').match(/\[[^\]]+\|[^\]]+\]/g) || [])]
+    const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br/>')
+    let html = `<!doctype html><html><head><meta charset="utf-8"><title>Mizan Compliance Session Report</title><style>
+      body{font-family:Georgia,serif;color:#1f2621;max-width:720px;margin:40px auto;padding:0 24px;line-height:1.55}
+      .head{border-bottom:3px solid #0f6b5c;padding-bottom:16px;margin-bottom:28px}
+      h1{font-size:26px;margin:0;color:#0a4a40} .sub{color:#5c6660;font-size:13px;margin-top:6px}
+      .qa{margin-bottom:26px;page-break-inside:avoid} .q{font-weight:bold;font-size:15px;color:#0a4a40;margin-bottom:6px}
+      .a{font-size:14px} .meta{font-size:11.5px;color:#5c6660;margin-top:8px}
+      .cite{display:inline-block;background:#e3f0ed;color:#0a4a40;border-radius:4px;padding:1px 7px;font-size:11px;margin:2px 4px 0 0;font-family:Arial}
+      .abstained{color:#b05010;font-weight:bold;font-size:12px}
+      .verified{color:#0f6b5c;font-weight:bold;font-size:12px}
+      table{border-collapse:collapse;font-size:13px} td{padding:3px 18px 3px 0}
+      .foot{margin-top:36px;border-top:1px solid #ccc;padding-top:12px;font-size:11px;color:#5c6660;font-style:italic}
+      @media print {.noprint{display:none}}
+    </style></head><body>
+    <div class="head"><h1>&#1605;&#1610;&#1586;&#1575;&#1606; Mizan — Compliance Session Report</h1>
+    <div class="sub">${demoCompany ? 'Company: Al Noor Trading LLC (demo profile) · ' : ''}Generated ${esc(when)} · ${qa.length} question${qa.length === 1 ? '' : 's'}${invoice?.invoice ? ' · 1 invoice check' : ''}</div></div>`
+    qa.forEach(({ q, a }, i) => {
+      const c = cites(a.answer)
+      const searches = (a.tool_trace || []).filter((t) => t.tool === 'search_regulations').length
+      html += `<div class="qa"><div class="q">Q${i + 1}. ${esc(q)}</div><div class="a">${md(a.answer)}</div><div class="meta">`
+      if (a.abstained) html += `<span class="abstained">DECLINED TO ANSWER — referred to a professional</span>`
+      else {
+        html += c.map((x) => `<span class="cite">${esc(x.replace(/[[\]]/g, ''))}</span>`).join('')
+        html += `<br/>Searched the law ${searches}&times; before answering` + (a.verified === true ? ` · <span class="verified">&#10003; independently verified against retrieved law text</span>` : '')
+      }
+      html += `</div></div>`
+    })
+    if (invoice?.invoice) {
+      const inv = invoice.invoice
+      html += `<div class="qa"><div class="q">Invoice check — ${esc(inv.supplier)}</div>
+      <table><tr><td>TRN</td><td>${esc(inv.trn || '—')}</td></tr><tr><td>Date</td><td>${esc(inv.date || '—')}</td></tr>
+      <tr><td>Subtotal</td><td>${inv.subtotal} ${esc(inv.currency)}</td></tr><tr><td>VAT</td><td>${inv.vat} ${esc(inv.currency)}</td></tr>
+      <tr><td><b>Total</b></td><td><b>${inv.total} ${esc(inv.currency)}</b></td></tr></table>
+      <div class="meta">${invoice.consistent === false ? '<span class="abstained">&#9888; ARITHMETIC MISMATCH — held for human review</span>' : '<span class="verified">&#10003; arithmetic consistent (subtotal + VAT = total)</span>'}</div></div>`
+    }
+    html += `<div class="foot">Every answer above is either cited to specific articles of UAE law or explicitly declined. Mizan provides compliance assistance, not tax advice; material decisions should be confirmed with a licensed tax professional. Full tool-level audit trails are retained in the application.</div>
+    <div class="noprint" style="margin-top:20px"><button onclick="window.print()" style="padding:10px 22px;font-size:14px;background:#0f6b5c;color:#fff;border:none;border-radius:8px;cursor:pointer">Print / Save as PDF</button></div>
+    </body></html>`
+    const w = window.open('', '_blank')
+    w.document.write(html)
+    w.document.close()
+  }
+
   async function uploadInvoice(file) {
     if (!file) return
     setBusy(true)
@@ -166,6 +226,10 @@ export default function App() {
         <h1>ميزان Mizan</h1>
         <p>UAE tax-compliance copilot for SMEs — answers cite the actual FTA law, and it refuses when unsure.</p>
         <p className="disclaimer">Compliance assistance, not tax advice.</p>
+        <label className="company-toggle">
+          <input type="checkbox" checked={demoCompany} onChange={(e) => setDemoCompany(e.target.checked)} />
+          🏢 Answer as <b>Al Noor Trading LLC</b> (demo company profile)
+        </label>
       </header>
 
       {messages.length === 0 && (
@@ -215,6 +279,11 @@ export default function App() {
         <button onClick={() => ask()} disabled={busy || !input.trim()}>Ask</button>
         <button className="ghost" onClick={() => fileRef.current.click()} disabled={busy}>
           Upload invoice
+        </button>
+        <button className="ghost" onClick={exportReport}
+          disabled={busy || (messages.filter((m) => m.role === 'bot').length === 0 && !invoice?.invoice)}
+          title="Export this session as an audit-ready compliance report">
+          📄 Report
         </button>
         <input ref={fileRef} type="file" accept="image/*" hidden
                onChange={(e) => uploadInvoice(e.target.files[0])} />

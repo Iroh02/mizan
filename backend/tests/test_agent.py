@@ -80,3 +80,83 @@ def test_event_stream_yields_status_then_final():
     assert events[0]["type"] == "status" and events[0]["tool"] == "vat_calculator"
     assert events[-1]["type"] == "final" and "done" in events[-1]["answer"]
     assert events[-1]["tool_trace"][0]["tool"] == "vat_calculator"
+
+
+def test_verifier_pass_revises_unsupported_answer(monkeypatch):
+    from mizan.agent import run_agent_events
+    from mizan.tools import Tool
+    monkeypatch.setenv("MIZAN_VERIFY", "1")
+    search = Tool("search_regulations", "", {"type": "object", "properties": {}},
+                  lambda **kw: "[law | Article 3]\nThe rate is nine percent above the threshold.")
+    llm = FakeLLM([
+        LLMResponse(tool_calls=[ToolCall("t1", "search_regulations", {"query": "rate"})]),
+        LLMResponse(content="The rate is 12%. Sources: [law | Article 3]"),   # wrong draft
+        LLMResponse(content="The rate is 9% above the threshold. Sources: [law | Article 3]"),  # verifier fix
+    ])
+    events = list(run_agent_events("rate?", llm, [search]))
+    statuses = [e for e in events if e["type"] == "status"]
+    assert any(s["tool"] == "verify_citations" for s in statuses)
+    final = events[-1]
+    assert "9%" in final["answer"] and final["verified"] is False
+    assert final["tool_trace"][-1]["tool"] == "verify_citations"
+
+
+def test_verifier_pass_confirms_good_answer(monkeypatch):
+    from mizan.agent import run_agent_events
+    from mizan.tools import Tool
+    monkeypatch.setenv("MIZAN_VERIFY", "1")
+    search = Tool("search_regulations", "", {"type": "object", "properties": {}},
+                  lambda **kw: "[law | Article 3]\nnine percent above the threshold.")
+    llm = FakeLLM([
+        LLMResponse(tool_calls=[ToolCall("t1", "search_regulations", {"query": "rate"})]),
+        LLMResponse(content="9% above the threshold. Sources: [law | Article 3]"),
+        LLMResponse(content="VERIFIED"),
+    ])
+    final = list(run_agent_events("rate?", llm, [search]))[-1]
+    assert final["verified"] is True and "9%" in final["answer"]
+
+
+def test_think_tags_are_stripped():
+    from mizan.llm import clean_content
+    assert clean_content("<think>secret reasoning</think>The rate is 9%.") == "The rate is 9%."
+    assert clean_content("plain answer") == "plain answer"
+    assert clean_content("<think>never closed and rambling") is None
+    assert clean_content("a<think>x</think>b<think>y</think>final") == "final"
+    assert clean_content(None) is None
+
+
+def test_verifier_receives_full_retrieved_text(monkeypatch):
+    from mizan.agent import run_agent_events
+    from mizan.tools import Tool
+    monkeypatch.setenv("MIZAN_VERIFY", "1")
+    long_law = "[law | Article 21] " + ("relief applies below three million dirhams. " * 20)  # >200 chars
+    search = Tool("search_regulations", "", {"type": "object", "properties": {}},
+                  lambda **kw: long_law)
+    llm = FakeLLM([
+        LLMResponse(tool_calls=[ToolCall("t1", "search_regulations", {"query": "relief"})]),
+        LLMResponse(content="Relief applies below AED 3M. Sources: [law | Article 21]"),
+        LLMResponse(content="VERIFIED"),
+    ])
+    final = list(run_agent_events("relief?", llm, [search]))[-1]
+    # the verifier call is the 3rd message set; its user content must contain the FULL text
+    verify_call = llm.seen[2]
+    assert long_law in verify_call[-1]["content"], "verifier must see full retrieved text, not a 200-char preview"
+    assert final["verified"] is True
+
+
+def test_abstention_detection_survives_smart_quotes_and_trailing_text():
+    from mizan.agent import is_abstention
+    assert is_abstention("I can’t answer this reliably — this needs a tax professional.")
+    assert is_abstention("I can't answer this reliably — this needs a tax professional.\n\nSources: None (no relevant law found)")
+    assert is_abstention("I CAN'T ANSWER THIS RELIABLY - this needs a tax professional")
+    assert not is_abstention("The rate is 9%. Sources: [law | Article 3]")
+    assert not is_abstention(None)
+
+
+def test_streamed_final_uses_robust_abstention(monkeypatch):
+    from mizan.agent import run_agent_events
+    # model refuses with a curly apostrophe + trailing sources — flag must still be true
+    llm = FakeLLM([LLMResponse(
+        content="I can’t answer this reliably — this needs a tax professional.\nSources: None")])
+    final = list(run_agent_events("2030 rate?", llm, [vat_calculator]))[-1]
+    assert final["abstained"] is True
