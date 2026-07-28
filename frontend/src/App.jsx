@@ -47,10 +47,21 @@ function Trace({ trace }) {
   )
 }
 
+const WAKING_HINT = 'Still working — the free-tier server naps after 15 min idle and can take up to a minute to wake up.'
+
+function friendlyError(e) {
+  // fetch throws a generic "Failed to fetch" / TypeError when the backend is asleep or unreachable
+  if (e instanceof TypeError || /fetch/i.test(e.message)) {
+    return "Couldn't reach the server — it may be waking up from the free tier's sleep. Please try again in a moment."
+  }
+  return e.message
+}
+
 export default function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
+  const [waking, setWaking] = useState(false)
   const [invoice, setInvoice] = useState(null)
   const fileRef = useRef()
 
@@ -60,6 +71,7 @@ export default function App() {
     setInput('')
     setMessages((m) => [...m, { role: 'user', text: question }])
     setBusy(true)
+    const wakeTimer = setTimeout(() => setWaking(true), 6000)
     try {
       const res = await fetch(`${API}/ask`, {
         method: 'POST',
@@ -70,8 +82,10 @@ export default function App() {
       const data = await res.json()
       setMessages((m) => [...m, { role: 'bot', ...data }])
     } catch (e) {
-      setMessages((m) => [...m, { role: 'bot', answer: `Error: ${e.message}`, error: true }])
+      setMessages((m) => [...m, { role: 'bot', answer: friendlyError(e), error: true }])
     } finally {
+      clearTimeout(wakeTimer)
+      setWaking(false)
       setBusy(false)
     }
   }
@@ -80,6 +94,7 @@ export default function App() {
     if (!file) return
     setBusy(true)
     setInvoice({ loading: true })
+    const wakeTimer = setTimeout(() => setWaking(true), 6000)
     try {
       const fd = new FormData()
       fd.append('file', file)
@@ -87,8 +102,10 @@ export default function App() {
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText)
       setInvoice(await res.json())
     } catch (e) {
-      setInvoice({ warning: `Error: ${e.message}` })
+      setInvoice({ warning: friendlyError(e) })
     } finally {
+      clearTimeout(wakeTimer)
+      setWaking(false)
       setBusy(false)
     }
   }
@@ -127,7 +144,7 @@ export default function App() {
             </div>
           )
         )}
-        {busy && <div className="msg bot thinking">thinking…</div>}
+        {busy && <div className="msg bot thinking">{waking ? WAKING_HINT : 'thinking…'}</div>}
       </main>
 
       <div className="inputrow">
@@ -145,6 +162,12 @@ export default function App() {
         <input ref={fileRef} type="file" accept="image/*" hidden
                onChange={(e) => uploadInvoice(e.target.files[0])} />
       </div>
+
+      {invoice?.loading && (
+        <section className="invoice">
+          <p className="thinking">{waking ? WAKING_HINT : 'Extracting invoice…'}</p>
+        </section>
+      )}
 
       {invoice && !invoice.loading && (
         <section className="invoice">
