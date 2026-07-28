@@ -43,6 +43,7 @@ class AgentResult:
     abstained: bool
     iterations: int
     tool_trace: list[dict] = field(default_factory=list)
+    retrieved: list[str] = field(default_factory=list)  # full law text shown to the model
 
 
 def run_agent_events(question: str, llm, tools: list[Tool], max_iters: int = 6,
@@ -89,10 +90,11 @@ def run_agent_events(question: str, llm, tools: list[Tool], max_iters: int = 6,
             trace.append({"tool": "verify_citations", "args": {},
                           "result_preview": "VERIFIED" if verified else "REVISED" if verified is False else "SKIPPED"})
         yield {"type": "final", "answer": answer, "abstained": is_abstention(answer),
-               "iterations": i, "tool_trace": trace, "verified": verified}
+               "iterations": i, "tool_trace": trace, "verified": verified,
+               "retrieved": retrieved_texts}
         return
     yield {"type": "final", "answer": ABSTAIN, "abstained": True,
-           "iterations": max_iters, "tool_trace": trace}
+           "iterations": max_iters, "tool_trace": trace, "retrieved": retrieved_texts}
 
 
 def run_agent(question: str, llm, tools: list[Tool], max_iters: int = 6,
@@ -103,4 +105,5 @@ def run_agent(question: str, llm, tools: list[Tool], max_iters: int = 6,
         if ev["type"] == "final":
             final = ev
     return AgentResult(answer=final["answer"], abstained=final["abstained"],
-                       iterations=final["iterations"], tool_trace=final["tool_trace"])
+                       iterations=final["iterations"], tool_trace=final["tool_trace"],
+                       retrieved=final.get("retrieved", []))

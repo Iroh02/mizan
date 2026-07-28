@@ -26,6 +26,7 @@ Do not add new claims. Do not soften supported claims. When in doubt about a bor
 INVOICE_PROMPT = """Extract the invoice in this image into STRICT JSON with exactly these keys:
 {"supplier": str, "trn": str|null, "date": str|null, "currency": str,
  "line_items": [{"description": str, "qty": number, "unit_price": number, "amount": number}],
- "subtotal": number, "vat": number, "total": number}
+ "subtotal": number, "vat": number, "total": number, "tax_invoice_label": true|false}
 Rules: TRN is the 15-digit UAE Tax Registration Number if visible, else null.
+tax_invoice_label is true only if the words "Tax Invoice" appear on the document.
 Numbers must be plain numbers (no currency symbols). Reply with ONLY the JSON, no markdown fences, no commentary."""

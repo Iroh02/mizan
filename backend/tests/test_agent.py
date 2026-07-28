@@ -80,6 +80,7 @@ def test_event_stream_yields_status_then_final():
     assert events[0]["type"] == "status" and events[0]["tool"] == "vat_calculator"
     assert events[-1]["type"] == "final" and "done" in events[-1]["answer"]
     assert events[-1]["tool_trace"][0]["tool"] == "vat_calculator"
+    assert events[-1]["retrieved"] == []  # no search happened → nothing retrieved
 
 
 def test_verifier_pass_revises_unsupported_answer(monkeypatch):
@@ -142,6 +143,8 @@ def test_verifier_receives_full_retrieved_text(monkeypatch):
     verify_call = llm.seen[2]
     assert long_law in verify_call[-1]["content"], "verifier must see full retrieved text, not a 200-char preview"
     assert final["verified"] is True
+    # full law text also ships to the client — powers citation drill-down + audit file
+    assert final["retrieved"] == [long_law]
 
 
 def test_abstention_detection_survives_smart_quotes_and_trailing_text():

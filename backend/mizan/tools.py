@@ -84,6 +84,7 @@ class Invoice(BaseModel):
     subtotal: float
     vat: float
     total: float
+    tax_invoice_label: bool | None = None  # Art 59(1)(a): the words "Tax Invoice" shown
 
 
 def _strip_fences(s: str) -> str:

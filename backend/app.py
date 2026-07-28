@@ -13,7 +13,7 @@ import json
 from fastapi.responses import StreamingResponse
 
 from mizan.agent import run_agent, run_agent_events
-from mizan.config import CHUNKS_PATH, MAX_AGENT_ITERS, TOP_K
+from mizan.config import CHAT_MODEL, CHUNKS_PATH, MAX_AGENT_ITERS, TOP_K
 from mizan.tools import extract_invoice, make_retriever_tool, vat_calculator
 
 app = FastAPI(title="Mizan", version="0.1.0",
@@ -49,7 +49,9 @@ def _runtime():
     llm = LLM()
     retriever = Retriever.from_file(CHUNKS_PATH)
     tools = [make_retriever_tool(retriever, top_k=TOP_K), vat_calculator]
-    return llm, tools
+    meta = {"model": CHAT_MODEL, "corpus_chunks": len(retriever.chunks),
+            "app_version": app.version}  # provenance for the audit defence file
+    return llm, tools, meta
 
 
 @app.get("/health")
@@ -58,7 +60,7 @@ def health(deep: bool = False):
     catches quota/key failures that a shallow check cannot. Use deep before demos,
     not in monitors (it costs tokens)."""
     try:
-        llm, _ = _runtime()
+        llm, _, _ = _runtime()
         if deep:
             resp = llm.chat_with_tools(
                 [{"role": "user", "content": "Reply with exactly: OK"}], [])
@@ -72,7 +74,7 @@ def health(deep: bool = False):
 def ask(req: AskRequest):
     if not req.question.strip():
         raise HTTPException(400, "question is empty")
-    llm, tools = _runtime()
+    llm, tools, meta = _runtime()
     try:
         result = run_agent(req.question.strip(), llm, tools,
                            max_iters=MAX_AGENT_ITERS,
@@ -80,7 +82,8 @@ def ask(req: AskRequest):
     except Exception as e:
         raise HTTPException(502, f"LLM call failed: {e}")
     return {"answer": result.answer, "abstained": result.abstained,
-            "iterations": result.iterations, "tool_trace": result.tool_trace}
+            "iterations": result.iterations, "tool_trace": result.tool_trace,
+            "retrieved": result.retrieved, "meta": meta}
 
 
 @app.post("/ask/stream")
@@ -88,13 +91,15 @@ def ask_stream(req: AskRequest):
     """Server-sent events: live tool-call status while the agent works, then the final answer."""
     if not req.question.strip():
         raise HTTPException(400, "question is empty")
-    llm, tools = _runtime()
+    llm, tools, meta = _runtime()
 
     def gen():
         try:
             for ev in run_agent_events(req.question.strip(), llm, tools,
                                        max_iters=MAX_AGENT_ITERS,
                                        history=_with_company(req.history, req.company)):
+                if ev.get("type") == "final":
+                    ev = {**ev, "meta": meta}
                 yield f"data: {json.dumps(ev)}\n\n"
         except Exception as e:
             yield f"data: {json.dumps({'type': 'error', 'detail': f'LLM call failed: {e}'})}\n\n"
@@ -110,7 +115,7 @@ async def extract(file: UploadFile = File(...)):
     data = await file.read()
     if len(data) > 8_000_000:
         raise HTTPException(400, "Image too large (max 8MB).")
-    llm, _ = _runtime()
+    llm, _, _ = _runtime()
     try:
         return extract_invoice(llm, base64.b64encode(data).decode(), file.content_type)
     except Exception as e:
