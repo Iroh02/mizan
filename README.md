@@ -4,7 +4,7 @@ Answers UAE Corporate Tax & VAT questions with **citations to the actual FTA law
 
 > Compliance assistance, not tax advice.
 
-**Live demo:** _add Vercel URL_ · **API:** _add Render URL_
+**Live demo:** https://frontend-nine-opal-91.vercel.app · **API:** https://mizan-jcdy.onrender.com (health: `/health`; free tier — first request after idle takes ~50s)
 
 ## Why this design
 
