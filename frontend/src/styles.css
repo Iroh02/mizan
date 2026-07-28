@@ -100,4 +100,27 @@ main { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
 .due { display: inline-block; background: var(--accent-soft); color: var(--accent); font-weight: 700; border-radius: 6px; padding: 1px 8px; font-size: 12.5px; }
 .due.soon { background: var(--bad-soft); color: var(--bad); }
 
+/* ---- samples, escalation, CSV export ---- */
+.samples { margin-top: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.samples-label { font-size: 12px; color: var(--muted); font-weight: 600; }
+.samples button { font-size: 12.5px; padding: 6px 12px; border: 1px dashed var(--accent); background: var(--card); color: var(--accent); border-radius: 99px; cursor: pointer; }
+.samples button:hover { background: var(--accent-soft); }
+.samples button:disabled { opacity: .5; cursor: default; }
+.escalate { display: inline-block; margin-top: 10px; font-size: 13px; font-weight: 700; color: var(--warn); border: 1px solid var(--warn); border-radius: 8px; padding: 6px 12px; text-decoration: none; }
+.escalate:hover { background: #fdf3ec; }
+.invoice-actions { margin-top: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.invoice-actions .escalate { margin-top: 0; }
+.csv-btn { font-size: 13px; font-weight: 600; padding: 6px 12px; border: 1px solid var(--accent); background: var(--card); color: var(--accent); border-radius: 8px; cursor: pointer; }
+.csv-btn:hover { background: var(--accent-soft); }
+
 footer { margin-top: 40px; font-size: 12px; color: var(--muted); text-align: center; }
+
+/* ---- v0.2: amber state, unverified citations, law highlight, reduced motion ---- */
+.check-row.amber .check-mark { color: #9a6b00; }
+.check-row.amber .check-body { color: #7a5600; }
+.check-verdict.amber { background: #fdf3d7; color: #7a5600; }
+.cite.unverified { background: #f1f1ee; color: #8a8578; border: 1px dashed #b0aa9a; }
+.law-text mark { background: #ffe9a8; color: inherit; padding: 0 2px; border-radius: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .check-row, .check-verdict, .position-row, .status-line { animation: none !important; opacity: 1 !important; }
+}

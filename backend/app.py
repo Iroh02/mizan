@@ -16,7 +16,7 @@ from mizan.agent import run_agent, run_agent_events
 from mizan.config import CHAT_MODEL, CHUNKS_PATH, MAX_AGENT_ITERS, TOP_K
 from mizan.tools import extract_invoice, make_retriever_tool, vat_calculator
 
-app = FastAPI(title="Mizan", version="0.1.0",
+app = FastAPI(title="Mizan", version="0.2.0",
               description="Agentic tax-compliance copilot for UAE SMEs. Compliance assistance, not tax advice.")
 
 app.add_middleware(
@@ -49,7 +49,10 @@ def _runtime():
     llm = LLM()
     retriever = Retriever.from_file(CHUNKS_PATH)
     tools = [make_retriever_tool(retriever, top_k=TOP_K), vat_calculator]
+    import hashlib
+    corpus_hash = hashlib.md5(open(CHUNKS_PATH, "rb").read()).hexdigest()[:8]
     meta = {"model": CHAT_MODEL, "corpus_chunks": len(retriever.chunks),
+            "corpus_version": corpus_hash,
             "app_version": app.version}  # provenance for the audit defence file
     return llm, tools, meta
 

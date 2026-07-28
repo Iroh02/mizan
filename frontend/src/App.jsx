@@ -9,6 +9,8 @@ function mdToHtml(s) {
     .replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
     .replace(/^#{1,4}\s*(.*)$/gm, '<b>$1</b>')
     .replace(/^\s*[-*•]\s+(.*)$/gm, '&nbsp;&nbsp;• $1')
+    // citation tokens stay LTR islands inside RTL (Arabic) text
+    .replace(/\[([^\][]+?\|[^\][]+?)\]/g, '<bdi dir="ltr">[$1]</bdi>')
     .replace(/\n/g, '<br/>')
 }
 
@@ -16,12 +18,40 @@ const DEMO_COMPANY =
   'Al Noor Trading LLC — mainland Dubai trading company (electronics), ~AED 2.1M annual revenue, ' +
   'VAT-registered since 2019, Corporate Tax registered 2024, 8 employees, imports from China, exports to Saudi Arabia.'
 
+// A3: the model must answer consistently with the deterministic card, so the
+// card's computed facts travel with the company context as authoritative.
+function companyContext() {
+  const vat = nextVatDue()
+  const now = new Date()
+  const fy = now > new Date(now.getFullYear(), 8, 30) ? now.getFullYear() : now.getFullYear() - 1
+  const ctDue = new Date(fy + 1, 8, 30)
+  return DEMO_COMPANY +
+    ' AUTHORITATIVE COMPLIANCE PROFILE (deterministic, from company records — answers MUST be consistent with these facts): ' +
+    `VAT registration required and in place (revenue AED 2,100,000 exceeds the AED 375,000 mandatory threshold). ` +
+    `Next VAT return due ${fmtDate(vat.due)} (quarterly periods). Corporate Tax return for FY${fy} due ${fmtDate(ctDue)}. ` +
+    `ELIGIBLE TO ELECT Small Business Relief: revenue AED 2,100,000 is below the AED 3,000,000 threshold — surface this whenever corporate tax liability is discussed. ` +
+    `IMPORTANT: AED 2,100,000 is REVENUE, not taxable income; taxable income is not known.`
+}
+
 const SUGGESTIONS = [
   'What is the corporate tax rate for income above AED 375,000?',
   'My revenue is AED 300,000 — do I need to register for corporate tax?',
   'How much VAT is due on a 12,500 AED invoice?',
+  'I just invoiced a customer in Riyadh for AED 85,000 — do I charge VAT on that?',
+  'What will the corporate tax rate be in 2030?',
   'ما هي نسبة ضريبة القيمة المضافة في الإمارات؟',
 ]
+
+const SAMPLES = [
+  { label: '✓ Clean invoice', file: 'clean.png' },
+  { label: '✗ Broken total', file: 'broken-total.png' },
+  { label: '✗ No TRN + 4.8% VAT', file: 'bad-vat.png' },
+  { label: '◦ Zero-rated export', file: 'export-ksa.png' },
+]
+
+function escalateHref(subject, body) {
+  return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+}
 
 // ---------------------------------------------------------------- law lookup
 // retrieved law arrives as blocks of chunks separated by \n---\n; each chunk's
@@ -37,26 +67,50 @@ function findLaw(retrieved, cite) {
   })
 }
 
-function Citations({ text, retrieved, onOpen }) {
+function Citations({ text, retrieved, unverified, onOpen }) {
   // renders [doc | Article N] citation tags found in the answer as chips
   const cites = [...new Set(text.match(/\[[^\]]+\|[^\]]+\]/g) || [])]
   if (!cites.length) return null
+  const isUnverified = (inner) =>
+    (unverified || []).some((u) => u.toLowerCase() === inner.toLowerCase())
   return (
     <div className="cites" dir="ltr">
       {cites.map((c) => {
-        const inner = c.replace(/[[\]]/g, '')
+        const inner = c.replace(/[[\]]/g, '').trim()
         const law = findLaw(retrieved, inner)
-        return law.length ? (
-          <button key={c} className="cite clickable" title="Read the law text this cites"
-                  onClick={() => onOpen({ cite: inner, texts: law })}>
-            {inner} <span className="cite-eye">§</span>
-          </button>
-        ) : (
-          <span key={c} className="cite">{inner}</span>
+        if (law.length) {
+          return (
+            <button key={c} className="cite clickable" title="Read the law text this cites"
+                    onClick={() => onOpen({ cite: inner, texts: law, answer: text })}>
+              {inner} <span className="cite-eye">§</span>
+            </button>
+          )
+        }
+        return (
+          <span key={c} className={`cite ${isUnverified(inner) ? 'unverified' : ''}`}
+                title={isUnverified(inner)
+                  ? 'Cited by the model but NOT verified against the corpus this turn — treat with caution'
+                  : 'Retrieved law text not available in this view'}>
+            {inner}{isUnverified(inner) && ' ⚠'}
+          </span>
         )
       })}
     </div>
   )
+}
+
+function highlightLaw(chunk, answer) {
+  // B2: mark the sentences the answer most plausibly relied on — any sentence
+  // sharing a distinctive figure (numbers, percentages, AED amounts) with it.
+  const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const figures = [...new Set((answer || '').match(/\d[\d,.]*\s*%|\bAED\s*[\d,]+|\b\d{1,3}(?:,\d{3})+\b/g) || [])]
+    .map((f) => f.replace(/\s+/g, '').toLowerCase())
+  if (!figures.length) return esc(chunk)
+  return chunk.split(/(?<=[.;:])\s+/).map((sent) => {
+    const flat = sent.replace(/\s+/g, '').toLowerCase()
+    const hit = figures.some((f) => flat.includes(f))
+    return hit ? `<mark>${esc(sent)}</mark>` : esc(sent)
+  }).join(' ')
 }
 
 function LawModal({ view, onClose }) {
@@ -68,9 +122,11 @@ function LawModal({ view, onClose }) {
           <span className="cite">{view.cite}</span>
           <button className="modal-x" onClick={onClose}>✕</button>
         </div>
-        <div className="modal-sub">Verbatim text retrieved from the corpus — exactly what the model was shown before answering.</div>
+        <div className="modal-sub">Verbatim text retrieved from the corpus — exactly what the model was shown before answering.
+          Highlighted: the passages sharing figures with the answer.</div>
         {view.texts.map((t, i) => (
-          <pre key={i} className="law-text">{t}</pre>
+          <pre key={i} className="law-text"
+               dangerouslySetInnerHTML={{ __html: highlightLaw(t, view.answer) }} />
         ))}
       </div>
     </div>
@@ -128,13 +184,29 @@ function buildChecklist(data) {
       cite: 'VAT-Executive-Regulation-52-2017 | Article 59(1)(g)(h)',
       fail: 'No itemised description of goods/services found.',
     },
-    {
-      label: 'VAT charged at the standard 5% rate',
-      ok: vatPct === null ? null : Math.abs(vatPct - 5) < 0.11,
-      cite: 'VAT-Law-8-2017 | Article 3',
-      fail: vatPct === null ? 'Could not compute the applied rate.'
-        : `VAT applied at ${vatPct.toFixed(2)}% of the subtotal — the standard rate is 5%.`,
-    },
+    (() => {
+      // A2: three-state VAT-rate check. 0% + export indicators = amber
+      // (zero-rating claimed, evidence required), never a red breach.
+      const looksExport = /export|riyadh|ksa|saudi arabia|\bgcc\b|outside (the )?uae|abroad/i.test(
+        [inv.supplier, ...(inv.line_items || []).map((l) => l.description)].join(' '))
+      if (vatPct === null) return {
+        label: 'VAT charged at the standard 5% rate', ok: null,
+        cite: 'VAT-Law-8-2017 | Article 3', fail: 'Could not compute the applied rate.',
+      }
+      if (Math.abs(vatPct - 5) < 0.11) return {
+        label: 'VAT charged at the standard 5% rate', ok: true, cite: 'VAT-Law-8-2017 | Article 3',
+      }
+      if (vatPct < 0.11 && looksExport) return {
+        label: 'VAT at 0% — zero-rating claimed', ok: 'amber',
+        cite: 'VAT-Law-8-2017 | Article 45 · VAT-Executive-Regulation-52-2017 | Article 30',
+        fail: 'Exports of goods are zero-rated — retain official and commercial evidence of export. Not a breach; verify export documentation.',
+      }
+      return {
+        label: 'VAT charged at the standard 5% rate', ok: false,
+        cite: 'VAT-Law-8-2017 | Article 3',
+        fail: `VAT applied at ${vatPct.toFixed(2)}% of the subtotal — the standard rate is 5%${vatPct < 0.11 ? ', and no export/zero-rating indicators were found' : ''}.`,
+      }
+    })(),
     {
       label: 'Arithmetic: subtotal + VAT = total',
       ok: data.consistent === true,
@@ -154,27 +226,32 @@ function InvoiceChecklist({ data }) {
   const rows = buildChecklist(data)
   if (!rows.length) return null
   const fails = rows.filter((r) => r.ok === false).length
+  const ambers = rows.filter((r) => r.ok === 'amber').length
+  const cls = (ok) => ok === false ? 'bad' : ok === 'amber' ? 'amber' : ok === null ? 'meh' : 'good'
+  const mark = (ok) => ok === true ? '✓' : ok === false ? '✗' : ok === 'amber' ? '◐' : '·'
   return (
     <div className="checklist">
       <div className="checklist-title">Article 59 tax-invoice checklist</div>
       {rows.map((r, i) => (
-        <div key={r.label} className={`check-row ${r.ok === false ? 'bad' : r.ok === null ? 'meh' : 'good'}`}
+        <div key={r.label} className={`check-row ${cls(r.ok)}`}
              style={{ animationDelay: `${0.25 + i * 0.35}s` }}>
-          <span className="check-mark">{r.ok === true ? '✓' : r.ok === false ? '✗' : '·'}</span>
+          <span className="check-mark">{mark(r.ok)}</span>
           <span className="check-body">
             {r.label}
-            {r.ok === false && (
+            {(r.ok === false || r.ok === 'amber') && (
               <span className="check-fail"> — {r.fail} <span className="cite">{r.cite}</span></span>
             )}
             {r.ok === null && <span className="check-unknown"> — could not verify from the image</span>}
           </span>
         </div>
       ))}
-      <div className={`check-verdict ${fails ? 'bad' : 'good'}`}
+      <div className={`check-verdict ${fails ? 'bad' : ambers ? 'amber' : 'good'}`}
            style={{ animationDelay: `${0.35 + rows.length * 0.35}s` }}>
         {fails
           ? `✗ ${fails} breach${fails > 1 ? 'es' : ''} of Article 59 — hold this invoice for review`
-          : '✓ Passes the Article 59 tax-invoice checklist'}
+          : ambers
+            ? '◐ Zero-rating claimed — verify export evidence before filing'
+            : '✓ Passes the Article 59 tax-invoice checklist'}
       </div>
     </div>
   )
@@ -242,6 +319,7 @@ export default function App() {
   const [busy, setBusy] = useState(false)
   const [statuses, setStatuses] = useState([])
   const [invoice, setInvoice] = useState(null)
+  const [invoiceLog, setInvoiceLog] = useState([])   // A4: EVERY check this session
   const [demoCompany, setDemoCompany] = useState(false)
   const [lawView, setLawView] = useState(null)
   const [meta, setMeta] = useState(null)
@@ -277,7 +355,7 @@ export default function App() {
     const res = await fetch(`${API}/ask`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question, history, company: demoCompany ? DEMO_COMPANY : null }),
+      body: JSON.stringify({ question, history, company: demoCompany ? companyContext() : null }),
     })
     if (!res.ok) throw new Error((await res.json()).detail || res.statusText)
     return res.json()
@@ -302,7 +380,7 @@ export default function App() {
         const res = await fetch(`${API}/ask/stream`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question, history, company: demoCompany ? DEMO_COMPANY : null }),
+          body: JSON.stringify({ question, history, company: demoCompany ? companyContext() : null }),
         })
         if (!res.ok || !res.body) throw new Error('stream unavailable')
         const reader = res.body.getReader()
@@ -345,7 +423,7 @@ export default function App() {
         qa.push({ q: messages[i].text, a: messages[i + 1] })
       }
     }
-    if (!qa.length && !invoice?.invoice) return
+    if (!qa.length && !invoiceLog.length) return
     const when = new Date().toLocaleString('en-AE', { dateStyle: 'long', timeStyle: 'short' })
     const cites = (t) => [...new Set((t || '').match(/\[[^\]]+\|[^\]]+\]/g) || [])]
     const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -367,10 +445,12 @@ export default function App() {
       .sig{margin-top:26px;page-break-inside:avoid} .sig td{padding:14px 40px 4px 0;border-bottom:1px solid #999;min-width:220px;font-size:12px}
       .sig .lbl{border:none;padding:2px 0 12px;color:#5c6660;font-size:11px}
       .foot{margin-top:36px;border-top:1px solid #ccc;padding-top:12px;font-size:11px;color:#5c6660;font-style:italic}
+      .amber{color:#9a6b00;font-weight:bold;font-size:12px}
+      @page{size:A4;margin:16mm}
       @media print {.noprint{display:none}}
     </style></head><body>
     <div class="head"><h1>&#1605;&#1610;&#1586;&#1575;&#1606; Mizan — Compliance Working Paper (Audit Defence File)</h1>
-    <div class="sub">${demoCompany ? 'Company: Al Noor Trading LLC (demo profile) · ' : ''}Generated ${esc(when)} · ${qa.length} position${qa.length === 1 ? '' : 's'}${invoice?.invoice ? ' · 1 invoice check' : ''}</div>
+    <div class="sub">${demoCompany ? 'Company: Al Noor Trading LLC (demo profile) · ' : ''}Generated ${esc(when)} · ${qa.length} position${qa.length === 1 ? '' : 's'}${invoiceLog.length ? ` · ${invoiceLog.length} invoice check${invoiceLog.length === 1 ? '' : 's'}` : ''}</div>
     <div class="sub">Purpose: if the FTA queries any position below, this file documents the question asked, the answer relied upon, and the verbatim law it was grounded in at the time.</div></div>`
     qa.forEach(({ q, a }, i) => {
       const c = cites(a.answer)
@@ -398,23 +478,30 @@ export default function App() {
       }
       html += `</div>`
     })
-    if (invoice?.invoice) {
-      const inv = invoice.invoice
-      const rows = buildChecklist(invoice)
-      html += `<div class="qa"><div class="q">Invoice check — ${esc(inv.supplier)}</div>
+    // A4: EVERY invoice check of the session, in order, with three-state results
+    invoiceLog.forEach((chk, n) => {
+      const inv = chk.invoice
+      const rows = buildChecklist(chk)
+      const reds = rows.filter((r) => r.ok === false).length
+      const ambers = rows.filter((r) => r.ok === 'amber').length
+      const at = chk.at ? new Date(chk.at).toLocaleString('en-AE', { dateStyle: 'medium', timeStyle: 'short' }) : when
+      html += `<div class="qa"><div class="q">Invoice check ${n + 1} of ${invoiceLog.length} — ${esc(inv.supplier)}${chk.filename ? ` <span style="font-weight:normal;color:#5c6660">(${esc(chk.filename)})</span>` : ''}</div>
+      <div class="meta">Checked ${esc(at)}</div>
       <table><tr><td>TRN</td><td>${esc(inv.trn || '—')}</td></tr><tr><td>Date</td><td>${esc(inv.date || '—')}</td></tr>
       <tr><td>Subtotal</td><td>${inv.subtotal} ${esc(inv.currency)}</td></tr><tr><td>VAT</td><td>${inv.vat} ${esc(inv.currency)}</td></tr>
       <tr><td><b>Total</b></td><td><b>${inv.total} ${esc(inv.currency)}</b></td></tr></table>
       <div class="law-h">ARTICLE 59 CHECKLIST</div><div class="meta">`
       rows.forEach((r) => {
-        html += `${r.ok === true ? '&#10003;' : r.ok === false ? '&#10007;' : '·'} ${esc(r.label)}` +
-          (r.ok === false ? ` — ${esc(r.fail)} <span class="cite">${esc(r.cite)}</span>` : '') + `<br/>`
+        html += `${r.ok === true ? '&#10003;' : r.ok === false ? '&#10007;' : r.ok === 'amber' ? '&#9681;' : '·'} ${esc(r.label)}` +
+          ((r.ok === false || r.ok === 'amber') ? ` — ${esc(r.fail)} <span class="cite">${esc(r.cite)}</span>` : '') + `<br/>`
       })
-      html += `</div><div class="meta">${invoice.consistent === false ? '<span class="abstained">&#9888; HELD FOR HUMAN REVIEW</span>' : ''}</div></div>`
-    }
-    html += `<div class="prov"><b>Provenance.</b> Generated by Mizan v${esc(meta?.app_version || '0.1.0')} ·
-      model: ${esc(meta?.model || 'n/a')} · corpus: ${meta?.corpus_chunks || '678'} article-aware chunks of UAE tax law and FTA guides ·
-      arithmetic by deterministic calculator, never the model · every answer cited or declined.</div>
+      html += `</div><div class="meta">${reds ? `<span class="abstained">&#10007; ${reds} BREACH${reds > 1 ? 'ES' : ''} — HELD FOR HUMAN REVIEW</span>`
+        : ambers ? '<span class="amber">&#9681; ZERO-RATING CLAIMED — VERIFY EXPORT EVIDENCE</span>'
+        : '<span class="verified">&#10003; PASSES THE ARTICLE 59 CHECKLIST</span>'}</div></div>`
+    })
+    html += `<div class="prov"><b>Provenance.</b> Generated by Mizan v${esc(meta?.app_version || '0.2.0')} ·
+      model: ${esc(meta?.model || 'n/a')} · corpus: ${meta?.corpus_chunks || '678'} article-aware chunks (version ${esc(meta?.corpus_version || 'n/a')}) of UAE tax law and FTA guides ·
+      arithmetic by deterministic calculator, never the model · every citation retrieval-verified or visibly flagged · every answer cited or declined.</div>
     <table class="sig"><tr><td>&nbsp;</td><td>&nbsp;</td></tr>
     <tr class="lbl"><td class="lbl">Prepared by (accountant)</td><td class="lbl">Date</td></tr>
     <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
@@ -436,12 +523,52 @@ export default function App() {
       fd.append('file', file)
       const res = await fetch(`${API}/extract-invoice`, { method: 'POST', body: fd })
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText)
-      setInvoice(await res.json())
+      const data = await res.json()
+      data.filename = file.name
+      data.at = new Date().toISOString()
+      setInvoice(data)
+      if (data.invoice) setInvoiceLog((l) => [...l, data])
     } catch (e) {
       setInvoice({ warning: `Error: ${e.message}` })
     } finally {
       setBusy(false)
     }
+  }
+
+  async function loadSample(s) {
+    if (busy) return
+    try {
+      const res = await fetch(`/samples/${s.file}`)
+      const blob = await res.blob()
+      uploadInvoice(new File([blob], s.file, { type: 'image/png' }))
+    } catch { /* sample missing — ignore */ }
+  }
+
+  function downloadInvoiceCsv() {
+    const inv = invoice?.invoice
+    if (!inv) return
+    const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const rows = [
+      ['Mizan invoice check', new Date().toISOString()],
+      ['Supplier', inv.supplier], ['TRN', inv.trn || 'MISSING'], ['Date', inv.date || '—'],
+      ['Currency', inv.currency],
+      [],
+      ['Line item', 'Qty', 'Unit price', 'Amount'],
+      ...(inv.line_items || []).map((l) => [l.description, l.qty, l.unit_price, l.amount]),
+      [],
+      ['Subtotal', inv.subtotal], ['VAT', inv.vat], ['Total', inv.total],
+      [],
+      ['Article 59 checklist', 'Result', 'Detail', 'Citation'],
+      ...buildChecklist(invoice).map((r) => [r.label,
+        r.ok === true ? 'PASS' : r.ok === false ? 'FAIL' : 'UNVERIFIED',
+        r.ok === false ? r.fail : '', r.cite]),
+    ]
+    const csv = rows.map((r) => (r || []).map(esc).join(',')).join('\r\n')
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' }))
+    a.download = `mizan-invoice-check-${(inv.supplier || 'invoice').replace(/\W+/g, '-')}.csv`
+    a.click()
+    URL.revokeObjectURL(a.href)
   }
 
   function onDrop(e) {
@@ -495,12 +622,21 @@ export default function App() {
             <div key={i} className={`msg bot ${m.error ? 'error' : ''} ${m.abstained ? 'abstained' : ''}`}>
               {m.abstained && <div className="badge">Declined to guess</div>}
               <div className="answer" dir="auto" dangerouslySetInnerHTML={{ __html: mdToHtml(m.answer) }} />
+              {m.abstained && (
+                <a className="escalate" href={escalateHref(
+                  `Tax question for review (via Mizan): ${messages[i - 1]?.text || 'question'}`,
+                  `Question:\n${messages[i - 1]?.text || ''}\n\nMizan declined to answer this from the law it has ` +
+                  `(${new Date(m.at || Date.now()).toLocaleString('en-AE')}) and recommends professional review.\n\n` +
+                  `Mizan's response:\n${m.answer}\n\n— Sent from Mizan, the UAE tax-compliance copilot. Compliance assistance, not tax advice.`)}>
+                  ⤴ Escalate to a tax professional
+                </a>
+              )}
               {!m.error && m.tool_trace?.some((t) => t.tool === 'search_regulations') && (
                 <div className="grounding" dir="ltr">
                   ⚖ Searched the law {m.tool_trace.filter((t) => t.tool === 'search_regulations').length}× before answering
                 </div>
               )}
-              {!m.error && <Citations text={m.answer} retrieved={m.retrieved} onOpen={setLawView} />}
+              {!m.error && <Citations text={m.answer} retrieved={m.retrieved} unverified={m.unverified_cites} onOpen={setLawView} />}
               {!m.error && <Trace trace={m.tool_trace} />}
             </div>
           )
@@ -530,12 +666,19 @@ export default function App() {
           Check invoice
         </button>
         <button className="ghost" onClick={exportReport}
-          disabled={busy || (messages.filter((m) => m.role === 'bot').length === 0 && !invoice?.invoice)}
+          disabled={busy || (messages.filter((m) => m.role === 'bot').length === 0 && !invoiceLog.length)}
           title="Export this session as an audit defence working paper">
           📄 Audit file
         </button>
         <input ref={fileRef} type="file" accept="image/*" hidden
                onChange={(e) => uploadInvoice(e.target.files[0])} />
+      </div>
+
+      <div className="samples" dir="ltr">
+        <span className="samples-label">Test the invoice checker:</span>
+        {SAMPLES.map((s) => (
+          <button key={s.file} onClick={() => loadSample(s)} disabled={busy}>{s.label}</button>
+        ))}
       </div>
 
       {invoice && !invoice.loading && (
@@ -557,6 +700,29 @@ export default function App() {
               <InvoiceChecklist data={invoice} />
             </div>
           )}
+          {invoice.invoice && (() => {
+            const rows = buildChecklist(invoice)
+            const fails = rows.filter((r) => r.ok === false || r.ok === 'amber')
+            return (
+              <div className="invoice-actions">
+                <button className="csv-btn" onClick={downloadInvoiceCsv}
+                        title="Download the extraction + Article 59 checklist as CSV (opens in Excel)">
+                  ⬇ Export for Excel
+                </button>
+                {fails.length > 0 && (
+                  <a className="escalate" href={escalateHref(
+                    `Invoice held for review (via Mizan): ${invoice.invoice.supplier}`,
+                    `Invoice from ${invoice.invoice.supplier} (${invoice.invoice.date || 'no date'}) failed ` +
+                    `${fails.length} check${fails.length > 1 ? 's' : ''} on the Article 59 tax-invoice checklist:\n\n` +
+                    fails.map((f) => `✗ ${f.label} — ${f.fail} [${f.cite}]`).join('\n') +
+                    `\n\nTotals: subtotal ${invoice.invoice.subtotal}, VAT ${invoice.invoice.vat}, total ${invoice.invoice.total} ${invoice.invoice.currency}.` +
+                    `\n\n— Sent from Mizan, the UAE tax-compliance copilot. Compliance assistance, not tax advice.`)}>
+                    ⤴ Escalate to a tax professional
+                  </a>
+                )}
+              </div>
+            )
+          })()}
         </section>
       )}
 

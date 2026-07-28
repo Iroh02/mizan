@@ -4,6 +4,25 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import os
+import re
+
+CITE_RE = re.compile(r"\[\s*([^\[\]|]+?)\s*\|\s*([^\[\]|]+?)\s*\]")
+
+
+def _chunk_labels(retrieved_texts: list[str]) -> set[tuple[str, str]]:
+    """(doc, article) labels of every chunk actually retrieved this turn."""
+    labels: set[tuple[str, str]] = set()
+    for block in retrieved_texts:
+        for chunk in block.split("\n---\n"):
+            first = chunk.strip().split("\n", 1)[0]
+            m = CITE_RE.search(first)
+            if m:
+                labels.add((m.group(1).strip().lower(), m.group(2).strip().lower()))
+    return labels
+
+
+def citations_in(text: str | None) -> list[tuple[str, str]]:
+    return [(m.group(1).strip(), m.group(2).strip()) for m in CITE_RE.finditer(text or "")]
 
 from mizan.llm import assistant_message_from, tool_result_message
 from mizan.prompts import SYSTEM_PROMPT, VERIFY_PROMPT
@@ -80,6 +99,30 @@ def run_agent_events(question: str, llm, tools: list[Tool], max_iters: int = 6,
                 messages.append(tool_result_message(tc.id, str(result)))
             continue
         answer = resp.content or ABSTAIN
+        # ---- citation audit: every [doc | Article N] must be retrieval-backed.
+        # A model can emit citations from memory (even with zero searches). For
+        # each citation not present in this turn's retrieved chunks, run ONE
+        # targeted retrieval. Backed after that -> chip becomes clickable and
+        # the verifier sees the text. Still unbacked -> reported to the UI,
+        # which renders it visibly unverified instead of silently trusted.
+        unverified: list[str] = []
+        search_tool = by_name.get("search_regulations")
+        if search_tool and not is_abstention(answer):
+            for doc, art in citations_in(answer):
+                if (doc.lower(), art.lower()) in _chunk_labels(retrieved_texts):
+                    continue
+                query = f"{doc} {art}"
+                yield {"type": "status", "tool": "verify_citations", "args": {"cite": f"{doc} | {art}"}}
+                try:
+                    result = search_tool.fn(query=query)
+                except Exception as e:
+                    result = f"ERROR: {e}"
+                trace.append({"tool": "search_regulations", "args": {"query": query},
+                              "result_preview": str(result)[:200]})
+                if not str(result).startswith("ERROR"):
+                    retrieved_texts.append(str(result))
+                if (doc.lower(), art.lower()) not in _chunk_labels(retrieved_texts):
+                    unverified.append(f"{doc} | {art}")
         verified = None
         if os.getenv("MIZAN_VERIFY") == "1" and not is_abstention(answer):
             yield {"type": "status", "tool": "verify_citations", "args": {}}
@@ -91,7 +134,7 @@ def run_agent_events(question: str, llm, tools: list[Tool], max_iters: int = 6,
                           "result_preview": "VERIFIED" if verified else "REVISED" if verified is False else "SKIPPED"})
         yield {"type": "final", "answer": answer, "abstained": is_abstention(answer),
                "iterations": i, "tool_trace": trace, "verified": verified,
-               "retrieved": retrieved_texts}
+               "retrieved": retrieved_texts, "unverified_cites": unverified}
         return
     yield {"type": "final", "answer": ABSTAIN, "abstained": True,
            "iterations": max_iters, "tool_trace": trace, "retrieved": retrieved_texts}

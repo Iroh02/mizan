@@ -156,6 +156,34 @@ def test_abstention_detection_survives_smart_quotes_and_trailing_text():
     assert not is_abstention(None)
 
 
+def test_memory_citation_is_backfilled_by_targeted_retrieval():
+    """A1: a citation the model produced WITHOUT searching must trigger a
+    targeted retrieval; once the chunk is found it becomes retrieval-backed."""
+    from mizan.agent import run_agent_events
+    from mizan.tools import Tool
+    search = Tool("search_regulations", "", {"type": "object", "properties": {}},
+                  lambda **kw: "[VAT-Law-8-2017 | Article 3]\nA standard rate of 5% shall be imposed.")
+    llm = FakeLLM([  # answers immediately, zero searches, citation from memory
+        LLMResponse(content="The rate is 5%. Sources: [VAT-Law-8-2017 | Article 3]"),
+    ])
+    events = list(run_agent_events("vat rate?", llm, [search]))
+    final = events[-1]
+    assert final["unverified_cites"] == []                       # backed after backfill
+    assert any(t["tool"] == "search_regulations" for t in final["tool_trace"])  # audit shows the search
+    assert any("[VAT-Law-8-2017 | Article 3]" in r for r in final["retrieved"])  # chip is clickable
+    assert any(e.get("tool") == "verify_citations" for e in events if e["type"] == "status")
+
+
+def test_unbackable_citation_is_reported_not_silently_trusted():
+    from mizan.agent import run_agent_events
+    from mizan.tools import Tool
+    search = Tool("search_regulations", "", {"type": "object", "properties": {}},
+                  lambda **kw: "[Some-Other-Doc | Article 9]\nUnrelated text.")
+    llm = FakeLLM([LLMResponse(content="It is so. Sources: [Imaginary-Law | Article 99]")])
+    final = list(run_agent_events("q", llm, [search]))[-1]
+    assert final["unverified_cites"] == ["Imaginary-Law | Article 99"]
+
+
 def test_streamed_final_uses_robust_abstention(monkeypatch):
     from mizan.agent import run_agent_events
     # model refuses with a curly apostrophe + trailing sources — flag must still be true
