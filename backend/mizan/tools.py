@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass
 from typing import Callable
 
@@ -87,6 +88,8 @@ class Invoice(BaseModel):
 
 def _strip_fences(s: str) -> str:
     s = s.strip()
+    # some vision models (e.g. Groq's qwen3.6-27b) prefix replies with a reasoning block
+    s = re.sub(r"^<think>.*?</think>", "", s, flags=re.DOTALL).strip()
     if s.startswith("```"):
         s = s.split("\n", 1)[1] if "\n" in s else s
         s = s.rsplit("```", 1)[0]
