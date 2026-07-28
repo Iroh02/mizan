@@ -124,3 +124,4 @@ footer { margin-top: 40px; font-size: 12px; color: var(--muted); text-align: cen
 @media (prefers-reduced-motion: reduce) {
   .check-row, .check-verdict, .position-row, .status-line { animation: none !important; opacity: 1 !important; }
 }
+.position-penalty { display: block; margin-top: 3px; font-size: 12px; color: var(--bad); opacity: .85; }

@@ -34,6 +34,20 @@ class Retriever:
         return cls([Chunk(**d) for d in data])
 
     def search(self, query: str, top_k: int = 5) -> list[Chunk]:
+        # "<doc> | <article>" queries (the citation audit's form) resolve
+        # deterministically by label — no ranking involved.
+        m = re.match(r"^\s*([\w\-.]+)\s*\|\s*(.+?)\s*$", query)
+        if m:
+            doc, art = m.group(1).lower(), m.group(2).lower()
+            exact = [c for c in self.chunks
+                     if c.doc_name.lower() == doc and c.article.lower() == art]
+            if exact:
+                return exact[:top_k]
         scores = self._bm25.get_scores(tokenize(query))
-        order = sorted(range(len(scores)), key=lambda i: -scores[i])[:top_k]
-        return [self.chunks[i] for i in order if scores[i] > 0]
+        # laws anchor, guides supplement: primary legislation gets a modest
+        # ranking boost so a guide's paraphrase never crowds the law itself
+        # out of the window the model (and the citations) will rely on.
+        adj = [s * (0.85 if "Guide" in self.chunks[i].doc_name else 1.0)
+               for i, s in enumerate(scores)]
+        order = sorted(range(len(adj)), key=lambda i: -adj[i])[:top_k]
+        return [self.chunks[i] for i in order if adj[i] > 0]

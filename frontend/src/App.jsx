@@ -287,8 +287,10 @@ function PositionCard() {
   )
   const rows = [
     { icon: '✓', text: <>VAT registration <b>required and in place</b> — revenue {AED(2100000)} exceeds the {AED(375000)} mandatory threshold (registered 2019)</>, cite: 'VAT-Executive-Regulation-52-2017 | Article 7' },
-    { icon: '⏱', text: <>Next VAT return (quarterly period ending {fmtDate(vat.end)}): <Days d={vat.due} /></>, cite: 'VAT-Executive-Regulation-52-2017 | Article 64' },
-    { icon: '⏱', text: <>Corporate Tax return FY{fy}: <Days d={ctDue} /> (9 months after financial-year end)</>, cite: 'Corporate-Tax-Law-47-2022 | Article 53' },
+    { icon: '⏱', text: <>Next VAT return (quarterly period ending {fmtDate(vat.end)}): <Days d={vat.due} /></>, cite: 'VAT-Executive-Regulation-52-2017 | Article 64',
+      penalty: <>if missed: administrative penalties apply (amounts set by Cabinet Decision 40/2017 — not yet in corpus)</>, penCite: 'VAT-Law-8-2017 | Article 76' },
+    { icon: '⏱', text: <>Corporate Tax return FY{fy}: <Days d={ctDue} /> (9 months after financial-year end)</>, cite: 'Corporate-Tax-Law-47-2022 | Article 53',
+      penalty: <>if missed: AED 500/month (first 12 months), then AED 1,000/month; unpaid tax accrues 14% p.a., charged monthly</>, penCite: 'Cabinet-Decision-75-2023-CT-Penalties | Table item 7 · Table item 8' },
     { icon: '✓', text: <><b>Small Business Relief — eligible to elect</b>: revenue {AED(2100000)} is under the {AED(3000000)} threshold</>, cite: 'Corporate-Tax-Law-47-2022 | Article 21 · CT-General-Guide-CTGGCT1 | Article 40' },
     { icon: '§', text: <>Corporate Tax exposure without relief: 0% band, then 9% on taxable income above it</>, cite: 'Corporate-Tax-Law-47-2022 | Article 3' },
     { icon: '⚠', text: <>Missed filings trigger an administrative penalty assessment</>, cite: 'VAT-Law-8-2017 | Article 76 · Corporate-Tax-Law-47-2022 | Article 60' },
@@ -302,7 +304,12 @@ function PositionCard() {
       {rows.map((r, i) => (
         <div key={i} className="position-row" style={{ animationDelay: `${i * 0.12}s` }}>
           <span className="position-icon">{r.icon}</span>
-          <span>{r.text} <span className="cite">{r.cite}</span></span>
+          <span>
+            {r.text} <span className="cite">{r.cite}</span>
+            {r.penalty && (
+              <span className="position-penalty">{r.penalty} <span className="cite">{r.penCite}</span></span>
+            )}
+          </span>
         </div>
       ))}
       <div className="position-foot">
