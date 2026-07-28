@@ -21,12 +21,11 @@ const SUGGESTIONS = [
 
 function Citations({ text }) {
   // renders [doc | Article N] citation tags found in the answer as chips
-  // the model occasionally emits full-width brackets (【...】) instead of ASCII ones
-  const cites = [...new Set(text.match(/[[【][^\]】]+\|[^\]】]+[\]】]/g) || [])]
+  const cites = [...new Set(text.match(/\[[^\]]+\|[^\]]+\]/g) || [])]
   if (!cites.length) return null
   return (
     <div className="cites">
-      {cites.map((c) => <span key={c} className="cite">{c.replace(/[[\]【】]/g, '')}</span>)}
+      {cites.map((c) => <span key={c} className="cite">{c.replace(/[[\]]/g, '')}</span>)}
     </div>
   )
 }
@@ -48,45 +47,98 @@ function Trace({ trace }) {
   )
 }
 
-const WAKING_HINT = 'Still working — the free-tier server naps after 15 min idle and can take up to a minute to wake up.'
-
-function friendlyError(e) {
-  // fetch throws a generic "Failed to fetch" / TypeError when the backend is asleep or unreachable
-  if (e instanceof TypeError || /fetch/i.test(e.message)) {
-    return "Couldn't reach the server — it may be waking up from the free tier's sleep. Please try again in a moment."
-  }
-  return e.message
-}
-
 export default function App() {
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
-  const [waking, setWaking] = useState(false)
+  const [statuses, setStatuses] = useState([])
   const [invoice, setInvoice] = useState(null)
   const fileRef = useRef()
+
+  function statusLabel(ev) {
+    if (ev.tool === 'search_regulations') return `⚖ Searching the law: “${ev.args?.query || ''}”`
+    if (ev.tool === 'vat_calculator') return '🧮 Calculating VAT (deterministic)…'
+    return `→ ${ev.tool}…`
+  }
+
+  function typeOut(final) {
+    return new Promise((resolve) => {
+      setMessages((m) => [...m, { role: 'bot', ...final, answer: '' }])
+      const text = final.answer || ''
+      let i = 0
+      const step = Math.max(3, Math.floor(text.length / 120))
+      const t = setInterval(() => {
+        i = Math.min(text.length, i + step)
+        setMessages((m) => {
+          const c = [...m]
+          c[c.length - 1] = { ...c[c.length - 1], answer: text.slice(0, i) }
+          return c
+        })
+        if (i >= text.length) { clearInterval(t); resolve() }
+      }, 24)
+    })
+  }
+
+  async function askBlocking(question, history) {
+    const res = await fetch(`${API}/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question, history }),
+    })
+    if (!res.ok) throw new Error((await res.json()).detail || res.statusText)
+    return res.json()
+  }
 
   async function ask(q) {
     const question = (q ?? input).trim()
     if (!question || busy) return
     setInput('')
+    const history = messages.map((m) =>
+      m.role === 'user'
+        ? { role: 'user', content: m.text }
+        : { role: 'assistant', content: m.answer || '' }
+    )
     setMessages((m) => [...m, { role: 'user', text: question }])
     setBusy(true)
-    const wakeTimer = setTimeout(() => setWaking(true), 6000)
+    setStatuses([])
     try {
-      const res = await fetch(`${API}/ask`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question }),
-      })
-      if (!res.ok) throw new Error((await res.json()).detail || res.statusText)
-      const data = await res.json()
-      setMessages((m) => [...m, { role: 'bot', ...data }])
+      let final = null
+      try {
+        // streaming path: watch the agent work in real time
+        const res = await fetch(`${API}/ask/stream`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question, history }),
+        })
+        if (!res.ok || !res.body) throw new Error('stream unavailable')
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buf = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          const parts = buf.split('\n\n')
+          buf = parts.pop()
+          for (const p of parts) {
+            const line = p.trim()
+            if (!line.startsWith('data:')) continue
+            const ev = JSON.parse(line.slice(5))
+            if (ev.type === 'status') setStatuses((s) => [...s, ev])
+            else if (ev.type === 'final') final = ev
+            else if (ev.type === 'error') throw new Error(ev.detail)
+          }
+        }
+        if (!final) throw new Error('stream ended unexpectedly')
+      } catch {
+        final = await askBlocking(question, history) // graceful fallback to non-streaming
+      }
+      setStatuses([])
+      await typeOut(final)
     } catch (e) {
-      setMessages((m) => [...m, { role: 'bot', answer: friendlyError(e), error: true }])
+      setMessages((m) => [...m, { role: 'bot', answer: `Error: ${e.message}`, error: true }])
     } finally {
-      clearTimeout(wakeTimer)
-      setWaking(false)
+      setStatuses([])
       setBusy(false)
     }
   }
@@ -95,7 +147,6 @@ export default function App() {
     if (!file) return
     setBusy(true)
     setInvoice({ loading: true })
-    const wakeTimer = setTimeout(() => setWaking(true), 6000)
     try {
       const fd = new FormData()
       fd.append('file', file)
@@ -103,10 +154,8 @@ export default function App() {
       if (!res.ok) throw new Error((await res.json()).detail || res.statusText)
       setInvoice(await res.json())
     } catch (e) {
-      setInvoice({ warning: friendlyError(e) })
+      setInvoice({ warning: `Error: ${e.message}` })
     } finally {
-      clearTimeout(wakeTimer)
-      setWaking(false)
       setBusy(false)
     }
   }
@@ -145,7 +194,14 @@ export default function App() {
             </div>
           )
         )}
-        {busy && <div className="msg bot thinking">{waking ? WAKING_HINT : 'thinking…'}</div>}
+        {busy && (
+          <div className="msg bot thinking">
+            {statuses.length === 0 && 'thinking…'}
+            {statuses.map((s, i) => (
+              <div key={i} className="status-line">{statusLabel(s)}</div>
+            ))}
+          </div>
+        )}
       </main>
 
       <div className="inputrow">
@@ -163,12 +219,6 @@ export default function App() {
         <input ref={fileRef} type="file" accept="image/*" hidden
                onChange={(e) => uploadInvoice(e.target.files[0])} />
       </div>
-
-      {invoice?.loading && (
-        <section className="invoice">
-          <p className="thinking">{waking ? WAKING_HINT : 'Extracting invoice…'}</p>
-        </section>
-      )}
 
       {invoice && !invoice.loading && (
         <section className="invoice">

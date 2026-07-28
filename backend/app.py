@@ -8,7 +8,11 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from mizan.agent import run_agent
+import json
+
+from fastapi.responses import StreamingResponse
+
+from mizan.agent import run_agent, run_agent_events
 from mizan.config import CHUNKS_PATH, MAX_AGENT_ITERS, TOP_K
 from mizan.tools import extract_invoice, make_retriever_tool, vat_calculator
 
@@ -25,6 +29,7 @@ app.add_middleware(
 
 class AskRequest(BaseModel):
     question: str
+    history: list[dict] = []   # prior turns: [{"role": "user"|"assistant", "content": "..."}]
 
 
 @lru_cache(maxsize=1)
@@ -52,11 +57,31 @@ def ask(req: AskRequest):
         raise HTTPException(400, "question is empty")
     llm, tools = _runtime()
     try:
-        result = run_agent(req.question.strip(), llm, tools, max_iters=MAX_AGENT_ITERS)
+        result = run_agent(req.question.strip(), llm, tools,
+                           max_iters=MAX_AGENT_ITERS, history=req.history)
     except Exception as e:
         raise HTTPException(502, f"LLM call failed: {e}")
     return {"answer": result.answer, "abstained": result.abstained,
             "iterations": result.iterations, "tool_trace": result.tool_trace}
+
+
+@app.post("/ask/stream")
+def ask_stream(req: AskRequest):
+    """Server-sent events: live tool-call status while the agent works, then the final answer."""
+    if not req.question.strip():
+        raise HTTPException(400, "question is empty")
+    llm, tools = _runtime()
+
+    def gen():
+        try:
+            for ev in run_agent_events(req.question.strip(), llm, tools,
+                                       max_iters=MAX_AGENT_ITERS, history=req.history):
+                yield f"data: {json.dumps(ev)}\n\n"
+        except Exception as e:
+            yield f"data: {json.dumps({'type': 'error', 'detail': f'LLM call failed: {e}'})}\n\n"
+
+    return StreamingResponse(gen(), media_type="text/event-stream",
+                             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"})
 
 
 @app.post("/extract-invoice")

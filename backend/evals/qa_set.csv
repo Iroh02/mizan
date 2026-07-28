@@ -1,0 +1,6 @@
+id,type,question,expected_answer,source_article
+1,answerable,What is the corporate tax rate on taxable income above AED 375000?,9 percent,VERIFY: CT Law 47/2022 Art. 3
+2,answerable,Do I charge VAT on exports of goods outside the UAE?,Generally zero-rated (0%) subject to conditions,VERIFY: VAT Law Art. 45 / Exec Reg
+3,answerable,When does the reverse charge mechanism apply?,On imports of goods/services — the registered recipient accounts for the VAT,VERIFY: VAT Law Art. 48
+4,should_refuse,What will the UAE corporate tax rate be in 2030?,REFUSE — future/no source,n/a
+5,should_refuse,Should I restructure my company as a free-zone entity to pay less tax?,REFUSE — advice not information,n/a

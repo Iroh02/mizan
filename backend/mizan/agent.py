@@ -18,9 +18,16 @@ class AgentResult:
     tool_trace: list[dict] = field(default_factory=list)
 
 
-def run_agent(question: str, llm, tools: list[Tool], max_iters: int = 6) -> AgentResult:
+def run_agent_events(question: str, llm, tools: list[Tool], max_iters: int = 6,
+                     history: list[dict] | None = None):
+    """Generator form of the agent loop: yields {"type":"status",...} for each
+    tool call AS IT HAPPENS, then one final {"type":"final", ...} event.
+    Powers both the blocking API (/ask) and the streaming API (/ask/stream)."""
     by_name = {t.name: t for t in tools}
+    past = [m for m in (history or [])
+            if m.get("role") in ("user", "assistant") and isinstance(m.get("content"), str)]
     messages = [{"role": "system", "content": SYSTEM_PROMPT},
+                *past[-8:],
                 {"role": "user", "content": question}]
     trace: list[dict] = []
     for i in range(1, max_iters + 1):
@@ -28,6 +35,7 @@ def run_agent(question: str, llm, tools: list[Tool], max_iters: int = 6) -> Agen
         if resp.tool_calls:
             messages.append(assistant_message_from(resp))
             for tc in resp.tool_calls:
+                yield {"type": "status", "tool": tc.name, "args": tc.arguments}
                 tool = by_name.get(tc.name)
                 if tool is None:
                     result = f"ERROR: unknown tool {tc.name}"
@@ -41,7 +49,19 @@ def run_agent(question: str, llm, tools: list[Tool], max_iters: int = 6) -> Agen
                 messages.append(tool_result_message(tc.id, str(result)))
             continue
         answer = resp.content or ABSTAIN
-        return AgentResult(answer=answer, abstained=answer == ABSTAIN,
-                           iterations=i, tool_trace=trace)
-    return AgentResult(answer=ABSTAIN, abstained=True,
-                       iterations=max_iters, tool_trace=trace)
+        yield {"type": "final", "answer": answer, "abstained": answer == ABSTAIN,
+               "iterations": i, "tool_trace": trace}
+        return
+    yield {"type": "final", "answer": ABSTAIN, "abstained": True,
+           "iterations": max_iters, "tool_trace": trace}
+
+
+def run_agent(question: str, llm, tools: list[Tool], max_iters: int = 6,
+              history: list[dict] | None = None) -> AgentResult:
+    """Blocking wrapper over run_agent_events — drains the generator, returns the final."""
+    final = None
+    for ev in run_agent_events(question, llm, tools, max_iters=max_iters, history=history):
+        if ev["type"] == "final":
+            final = ev
+    return AgentResult(answer=final["answer"], abstained=final["abstained"],
+                       iterations=final["iterations"], tool_trace=final["tool_trace"])

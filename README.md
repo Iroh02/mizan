@@ -1,5 +1,7 @@
 # Mizan (ميزان) — Agentic Tax-Compliance Copilot for UAE SMEs
 
+![CI](https://github.com/Iroh02/mizan/actions/workflows/ci.yml/badge.svg)
+
 Answers UAE Corporate Tax & VAT questions with **citations to the actual FTA law**, extracts invoices with vision AI, computes VAT deterministically — and **abstains rather than guesses** when the law doesn't clearly answer.
 
 > Compliance assistance, not tax advice.
@@ -35,7 +37,11 @@ DEPLOY.md           Render + Vercel runbook
 
 ## Quickstart
 
-See **DEPLOY.md** (local run + both deploys). Tests: `cd backend && python -m pytest -v`.
+See **DEPLOY.md** (local run + both deploys). Tests: `cd backend && python -m pytest -v` — they also run automatically in CI on every push.
+
+## Evaluation
+
+`backend/evals/` holds our human-verified QA set and the runner (`python evals/run_qa.py`) that executes it against a live deployment and produces `qa_results.md` for human judgment. Refusal behaviour is scored automatically; answer correctness is always judged by a human against the cited law — the script never grades itself.
 
 ## Push to GitHub (first time)
 

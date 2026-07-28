@@ -36,12 +36,5 @@ main { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
 footer { margin-top: 40px; font-size: 12px; color: var(--muted); text-align: center; }
 .answer { white-space: normal; }
 .grounding { margin-top: 8px; font-size: 12px; color: var(--accent); font-weight: 600; }
-
-@media (max-width: 480px) {
-  .wrap { padding: 20px 12px 140px; }
-  header h1 { font-size: 24px; }
-  .msg { max-width: 100%; }
-  .inputrow { flex-wrap: wrap; padding: 10px 12px 16px; }
-  .inputrow input[type="text"], .inputrow input:not([type]) { flex-basis: 100%; max-width: none; order: -1; }
-  .inputrow button { flex: 1; }
-}
+.status-line { font-size: 13px; color: var(--accent); font-style: normal; padding: 2px 0; animation: fadein .3s; }
+@keyframes fadein { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; } }
